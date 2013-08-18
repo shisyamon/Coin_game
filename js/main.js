@@ -10,6 +10,8 @@
  */
 enchant();
 
+var IMG_GROUND = 'res/ground_test.png';
+
 /*
  * window.onload
  *
@@ -21,5 +23,28 @@ enchant();
  * 特に new Core(); は、<body> タグが存在しないとエラーになるので注意。
  */
 window.onload = function(){
-
+  // ゲーム画面を開く
+  var game = new Core(800, 600);
+  
+  // フレームレートの設定
+  game.fps = 30;
+  
+  // 画像のロード
+  // プログラムで使う画像は全てここで読み込む
+  game.preload([IMG_GROUND]);
+  
+  
+  game.onload = function() {
+    
+    // 地面を敷き詰める。
+    for (var x = 0; x < game.width; x += 64) {
+      var ground = new Sprite(64, 64);
+      ground.image = game.assets[IMG_GROUND];
+      ground.x = x;
+      ground.y = game.height - 64;
+      game.rootScene.addChild(ground);
+    }
+      
+  }
+  game.start();
 };
