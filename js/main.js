@@ -46,7 +46,6 @@ window.onload = function(){
     
     var aPlayer = new Player(200, 200);
     var Coin = new Item(0, 10, 32, 32);
-    console.log(aPlayer.test);
     
     //コインを出現させる。
     coinList = [];
@@ -81,23 +80,43 @@ var Player = enchant.Class.create
  
  initialize: function(x, y) {
   enchant.Sprite.call(this, 64, 64);
+  // enchant.jsでは変数を予め宣言する必要は無い。(逆に宣言してしまうとエラーになる？)
+  // フィールドに値を設定するときはthis.xxxのようにして書く。
+  // x, y: 座標
+  // frame: 表示する画像
+  // count: フレームカウント用
+  // direction: キャラの向き。1が右、-1が左
   this.image = game.assets[IMG_PLAYER];
   this.x = x;
   this.y = y;
-  this.test = "Detteiu";
-  this.frame = 1;
+  this.frame = 0;
+  this.count = 0;
+  this.direction = 1;
  
   this.addEventListener
     ('enterframe', function() {
      this.y += 5;
+     
+     this.count++;
+     if (this.count > 2) {
+      this.count = 1;
+     }
+     
    
      // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
      var delta = 10;
      if (game.input.left) {
       this.x -= delta;
+      this.frame = this.count;
+      this.direction = -1;
      }else if (game.input.right) {
       this.x += delta;
+      this.frame = this.count;
+      this.direction = 1;
+     }else{
+      this.frame = 0;
      }
+     this.scaleX = this.direction;
    
      // 壁との衝突判定
      // 微調整の余地アリ
@@ -121,8 +140,15 @@ var Player = enchant.Class.create
  }
 });
 
+// enchant.jsのスプライト(Sprite)クラスを継承し、Itemクラスを作成。
 var Item = enchant.Class.create
   (enchant.Sprite, {
+   // コンストラクタ。
+   // 引数について
+   // id: 落下物の種類 (0:黄色コイン)
+   // delta: 1フレーム毎に落下させる量(単位:ピクセル)
+   // spr_width: スプライトの横幅
+   // spr_height: スプライトの縦幅
    initialize: function(id, delta, spr_width, spr_height) {
    var img_name;
    if (id == 0) {
@@ -130,8 +156,10 @@ var Item = enchant.Class.create
    }
    enchant.Sprite.call(this, spr_width, spr_height, img_name);
    this.image = game.assets[img_name];
+   // アイテムの出現位置をセット。x座標は画面内に収まるように、y座標は画面外にセット。
    this.x = Math.round(Math.random() * (game.width - this.width));
    this.y = -1 * Math.round(Math.random() * 200);
+   // フレーム毎の処理
    this.addEventListener
     ("enterframe", function() {
      this.y += delta;
@@ -147,6 +175,7 @@ var Item = enchant.Class.create
    game.rootScene.addChild(this);
    },
    
+   // 地面やプレイヤーに衝突した時の処理
    remove: function() {
     game.rootScene.removeChild(this);
     delete this;
