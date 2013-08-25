@@ -11,8 +11,10 @@
 enchant();
 
 var IMG_GROUND = 'res/ground_test.png';
-var IMG_PLAYER = 'res/chara1_4x.png'
+var IMG_PLAYER = 'res/chara1_4x.png';
+var IMG_COIN_YELLOW = 'res/coin_yellow.png';
 var key_jump = 32;
+var NUM_COIN = 100;
 
 /*
  * window.onload
@@ -26,10 +28,10 @@ var key_jump = 32;
  */
 window.onload = function(){
   // ゲーム画面を開く
-  var game = new Core(800, 600);
+  game = new Core(800, 600);
   
   // フレームレートの設定
-  game.fps = 30;
+  game.fps = 29.97;
   
   // キー(移動以外)の設定
   game.keybind(key_jump, 'a'); //ジャンプ
@@ -37,20 +39,24 @@ window.onload = function(){
   
   // 画像のロード
   // プログラムで使う画像は全てここで読み込む
-  game.preload([IMG_GROUND, IMG_PLAYER]);
+  game.preload([IMG_GROUND, IMG_PLAYER, IMG_COIN_YELLOW]);
   
   
   game.onload = function() {
     
+    var aPlayer = new Player(200, 200);
+    var Coin = new Item(0, 10, 32, 32);
+    console.log(aPlayer.test);
     
-    var player = new Sprite(64, 64);
-    player.image = game.assets[IMG_PLAYER];
-    player.x = 100;
-    player.y = 100;
-    game.rootScene.addChild(player);
+    //コインを出現させる。
+    coinList = [];
+    for (var i = 0; i < NUM_COIN; i++) {
+      var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), 32, 32);
+      coinList.push(aCoin);
+    }
     
     // 地面を敷き詰める。
-    var groundList = [];
+    groundList = [];
     for (var x = 0; x < game.width; x += 64) {
       var ground = new Sprite(64, 64);
       ground.image = game.assets[IMG_GROUND];
@@ -66,36 +72,85 @@ window.onload = function(){
     
     // 操作キャラのフレーム毎の処理
     // TODO: spriteクラスを継承してplayerクラスを作り、フィールドを定義したり自作メソッドが呼び出せるようにする。
-    player.addEventListener
-    ("enterframe", function(){
-      this.y += 5;
-     
-     
-      // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
-      var delta = 5;
-      if (game.input.left) {
-        this.x -= delta;
-      }else if (game.input.right) {
-        this.x += delta;
-      }
-     
-     
-      // 壁との衝突判定
-      // 微調整の余地アリ
-      if (this.x < 0) {
-        this.x = 0;
-      }else if(this.x > game.width - this.width) {
-        this.x = game.width - this.width;
-      }
-     
-      // 地面との衝突判定
-      for (var i = 0; i < groundList.length; i++) {
-      var aGround = groundList[i];
-        if (this.intersect(aGround)) {
-          this.y = aGround.y - this.height;
-        }
-      }
-    });
   }
   game.start();
 };
+
+var Player = enchant.Class.create
+(enchant.Sprite,{
+ 
+ initialize: function(x, y) {
+  enchant.Sprite.call(this, 64, 64);
+  this.image = game.assets[IMG_PLAYER];
+  this.x = x;
+  this.y = y;
+  this.test = "Detteiu";
+  this.frame = 1;
+ 
+  this.addEventListener
+    ('enterframe', function() {
+     this.y += 5;
+   
+     // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
+     var delta = 10;
+     if (game.input.left) {
+      this.x -= delta;
+     }else if (game.input.right) {
+      this.x += delta;
+     }
+   
+     // 壁との衝突判定
+     // 微調整の余地アリ
+     if (this.x < 0) {
+      this.x = 0;
+     }else if(this.x > game.width - this.width) {
+      this.x = game.width - this.width;
+     }
+   
+     // 地面との衝突判定
+     for (var i = 0; i < groundList.length; i++) {
+       var aGround = groundList[i];
+       if (this.intersect(aGround)) {
+        this.y = aGround.y - this.height;
+       }
+     }
+   
+  });
+ 
+ game.rootScene.addChild(this);
+ }
+});
+
+var Item = enchant.Class.create
+  (enchant.Sprite, {
+   initialize: function(id, delta, spr_width, spr_height) {
+   var img_name;
+   if (id == 0) {
+    img_name = IMG_COIN_YELLOW;
+   }
+   enchant.Sprite.call(this, spr_width, spr_height, img_name);
+   this.image = game.assets[img_name];
+   this.x = Math.round(Math.random() * (game.width - this.width));
+   this.y = -1 * Math.round(Math.random() * 200);
+   this.addEventListener
+    ("enterframe", function() {
+     this.y += delta;
+     
+     // 地面との衝突判定
+     for (var i = 0; i < groundList.length; i++) {
+      var aGround = groundList[i];
+      if (this.intersect(aGround)) {
+        this.remove();
+      }
+     }
+     });
+   game.rootScene.addChild(this);
+   },
+   
+   remove: function() {
+    game.rootScene.removeChild(this);
+    delete this;
+   }
+  });
+
+
