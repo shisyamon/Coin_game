@@ -13,8 +13,10 @@ enchant();
 var IMG_GROUND = 'res/ground_test.png';
 var IMG_PLAYER = 'res/chara1_4x.png';
 var IMG_COIN_YELLOW = 'res/coin_yellow.png';
+var IMG_SCORE_NUM = 'res/score_num_thin.png';
 var key_jump = 32;
-var NUM_COIN = 100;
+var NUM_MAX_ITEM = 50;
+var aScore;
 
 /*
  * window.onload
@@ -39,23 +41,31 @@ window.onload = function(){
   
   // 画像のロード
   // プログラムで使う画像は全てここで読み込む
-  game.preload([IMG_GROUND, IMG_PLAYER, IMG_COIN_YELLOW]);
+  game.preload([IMG_GROUND,
+                IMG_PLAYER,
+                IMG_COIN_YELLOW,
+                IMG_SCORE_NUM]);
   
   
   game.onload = function() {
     
+    var pause = new Pause();
+    
     var aPlayer = new Player(200, 200);
+    
     var Coin = new Item(0, 10, 32, 32);
     
+    aScore = new Score();
+    
     //コインを出現させる。
-    coinList = [];
-    for (var i = 0; i < NUM_COIN; i++) {
+    itemList = new Array();
+    for (var i = 0; i < NUM_MAX_ITEM; i++) {
       var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), 32, 32);
-      coinList.push(aCoin);
+      itemList.push(aCoin);
     }
     
     // 地面を敷き詰める。
-    groundList = [];
+    groundList = new Array();
     for (var x = 0; x < game.width; x += 64) {
       var ground = new Sprite(64, 64);
       ground.image = game.assets[IMG_GROUND];
@@ -65,8 +75,20 @@ window.onload = function(){
       // 衝突判定のために配列に保存する。
       // 衝突させる物体(コイン、アイテムなど)が増えるにつれ重くなるので1枚のデカいテクスチャに変える可能性アリ
       groundList.push(ground);
+      
+      game.rootScene.addEventListener
+        ("enterframe", function(){
+         if (itemList.length < NUM_MAX_ITEM) {
+         for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
+         var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), 32, 32);
+         itemList.push(aCoin);
+         }
+         }
+         });
       // 画面に出す。
       game.rootScene.addChild(ground);
+      
+      
     }
     
     // 操作キャラのフレーム毎の処理
@@ -80,12 +102,13 @@ var Player = enchant.Class.create
  
  initialize: function(x, y) {
   enchant.Sprite.call(this, 64, 64);
-  // enchant.jsでは変数を予め宣言する必要は無い。(逆に宣言してしまうとエラーになる？)
+  // enchant.jsでは変数を予め宣言する必要は無い。
   // フィールドに値を設定するときはthis.xxxのようにして書く。
   // x, y: 座標
   // frame: 表示する画像
   // count: フレームカウント用
   // direction: キャラの向き。1が右、-1が左
+  var that = this;
   this.image = game.assets[IMG_PLAYER];
   this.x = x;
   this.y = y;
@@ -101,7 +124,6 @@ var Player = enchant.Class.create
      if (this.count > 2) {
       this.count = 1;
      }
-     
    
      // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
      var delta = 10;
@@ -117,6 +139,10 @@ var Player = enchant.Class.create
       this.frame = 0;
      }
      this.scaleX = this.direction;
+     
+     if(game.input.a) {
+     game.pause();
+     }
    
      // 壁との衝突判定
      // 微調整の余地アリ
@@ -127,13 +153,19 @@ var Player = enchant.Class.create
      }
    
      // 地面との衝突判定
-     for (var i = 0; i < groundList.length; i++) {
-       var aGround = groundList[i];
-       if (this.intersect(aGround)) {
-        this.y = aGround.y - this.height;
+     groundList.forEach (function(aGround, i) {
+       if (that.intersect(aGround)) {
+         that.y = aGround.y - that.height;
        }
-     }
-   
+     });
+     
+     // アイテムとの衝突判定
+     itemList.forEach (function(aItem, i) {
+      if (that.intersect(aItem)) {
+        aScore.addPoint(aItem.getPoint());
+        aItem.remove();
+      }
+     });
   });
  
  game.rootScene.addChild(this);
@@ -152,8 +184,10 @@ var Item = enchant.Class.create
    initialize: function(id, delta, spr_width, spr_height) {
    var img_name;
    var that = this;
+   this.point = 0;
    if (id == 0) {
     img_name = IMG_COIN_YELLOW;
+    this.point = 100;
    }
    enchant.Sprite.call(this, spr_width, spr_height, img_name);
    this.image = game.assets[img_name];
@@ -164,7 +198,6 @@ var Item = enchant.Class.create
    this.addEventListener
     ("enterframe", function() {
      this.y += delta;
-     
      // 地面との衝突判定
      groundList.forEach (function(aGround, i) {
        if (that.intersect(aGround)) {
@@ -175,11 +208,113 @@ var Item = enchant.Class.create
    game.rootScene.addChild(this);
    },
    
+   // スコアを返す
+   getPoint: function() {
+    return this.point;
+   },
+   
    // 地面やプレイヤーに衝突した時の処理
    remove: function() {
+    var that = this;
     game.rootScene.removeChild(this);
+    itemList.forEach( function(aItem, i) {
+    if (that == aItem) {
+      itemList.splice(i, 1);
+    }
+    });
     delete this;
    }
   });
 
+// スコア表示
+var Score = enchant.Class.create
+  (enchant.Group, {
+   initialize: function() {
+   enchant.Group.call(this);
+   var that = this;
+   this.x = 10;
+   this.y = 20;
+   this.digits = new Array();
+   this.score = 1500;
+   this.score2 = 0;
+   // スコアは8桁
+   for (var i = 0; i < 8; i++) {
+   var aDigit = this.digits[i];
+   aDigit = new Sprite(28, 28);
+   aDigit.image = game.assets[IMG_SCORE_NUM];
+   aDigit.x = 210 - i * 28;
+   aDigit.y = 0;
+   aDigit.frame = 10;
+   this.digits.push(aDigit);
+   this.addChild(aDigit);
+   }
+   game.rootScene.addChild(this);
+   this.addEventListener
+    ("enterframe", function(){
+     if (this.score > 9999999) {
+      this.score = 99999999;
+     }else if(this.score < 0) {
+      this.score = 0;
+     }
+     
+     // 徐々にスコアがカウントされるアレ。
+     var step = 10;
+     if (Math.abs(this.score - this.score2) >= 500) {
+      step = 500;
+     }
+     if (this.score2 < this.score) {
+      this.score2 += step;
+     }else if(this.score2 > this.score) {
+      this.score2 -= step;
+     }else{
+     this.score2 = this.score;
+     }
+     var str = String(this.score2);
+     var ary = str.split("").reverse();
+     this.digits.forEach
+      (function(aDigit, i){
+       if (ary[i] != null) {
+       aDigit.frame = ary[i];
+       }else{
+       // ここを0にすると0埋め、10にすると空白で埋められる。
+       aDigit.frame = 0;
+       }
+       
+       });
+     });
+   },
+   
+   addPoint: function(point) {
+   console.log(this.score + " " + point);
+    this.score += point;
+   }
+   });
+
+// デバッグ用の一時停止プログラム。
+// 画面右上の四角をクリックすると停止と実行が切り替わる。
+var Pause = enchant.Class.create
+(enchant.Entity, {
+ initialize: function() {
+ enchant.Entity.call(this);
+
+ this.x = 745;
+ this.y = 10;
+ this.width = 50;
+ this.height = 50;
+ this.flag = 1;
+ this.touchEnabled = "enabled";
+ this.backgroundColor = "#ffa500";
+ this.addEventListener
+ ("touchstart", function() {
+  if (this.flag == 1) {
+  game.pause();
+  this.flag = 2;
+  }else if (this.flag == 2) {
+  game.resume();
+  this.flag = 1;
+  }
+  });
+ game.rootScene.addChild(this);
+ }
+ });
 
