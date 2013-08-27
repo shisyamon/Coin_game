@@ -14,8 +14,9 @@ var IMG_GROUND = 'res/ground_test.png';
 var IMG_PLAYER = 'res/chara1_4x.png';
 var IMG_COIN_YELLOW = 'res/coin_yellow.png';
 var IMG_SCORE_NUM = 'res/score_num_thin.png';
-var key_jump = 32;
+var KEY_JUMP = 32;
 var NUM_MAX_ITEM = 50;
+var GRAVITY = 9.8;
 var aScore;
 
 /*
@@ -35,8 +36,10 @@ window.onload = function(){
   // フレームレートの設定
   game.fps = 29.97;
   
+  game.scale = 1.0;
+  
   // キー(移動以外)の設定
-  game.keybind(key_jump, 'a'); //ジャンプ
+  game.keybind(KEY_JUMP, 'a'); //ジャンプ
   
   
   // 画像のロード
@@ -109,16 +112,61 @@ var Player = enchant.Class.create
   // count: フレームカウント用
   // direction: キャラの向き。1が右、-1が左
   var that = this;
+ var SPACE_JUMP = 2;
+ var VELOCITY = 9.8;
   this.image = game.assets[IMG_PLAYER];
   this.x = x;
   this.y = y;
   this.frame = 0;
   this.count = 0;
   this.direction = 1;
+ this.ts = game.frame;
+ this.te = game.frame;
+  this.state = 0;
+ this.oldState = 0;
+ this.jumpCount = SPACE_JUMP;
  
+ var isKeyDown = false;
+ var isKeyUpPress = false;
+ var isKeyDownPress = false;
+ var isKeyLeftPress = false;
+ var isKeyRightPress = false;
+ var isKeySpacePress = false;
+ 
+ document.addEventListener("")
+ 
+ document.addEventListener('keydown', function(e) {
+                           
+                           switch(e.keyCode) {
+                           case 32:
+                            isKeySpacePress = true;
+                            if (that.state == 0 || that.jumpCount > 0) {
+                           that.jump();
+                              that.ts = game.frame;
+                            }
+                            break;
+                           case 37: isKeyLeftPress = true; break;
+                           case 38: isKeyUpPress = true; break;
+                           case 39: isKeyRightPress = true; break;
+                           case 40: isKeyDownPress = true; break;
+                           }
+                           
+                           }, true);
+ document.addEventListener('keyup', function(e) {
+                           
+                           switch(e.keyCode) {
+                           case 32: isKeySpacePress = false; break;
+                           case 37: isKeyLeftPress = false; break;
+                           case 38: isKeyUpPress = false; break;
+                           case 39: isKeyRightPress = false; break;
+                           case 40: isKeyDownPress = false; break;
+                           }
+                           
+                           }, true);
+
   this.addEventListener
     ('enterframe', function() {
-     this.y += 5;
+     //this.y += 10;
      
      this.count++;
      if (this.count > 2) {
@@ -127,11 +175,11 @@ var Player = enchant.Class.create
    
      // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
      var delta = 10;
-     if (game.input.left) {
+     if (isKeyLeftPress) {
       this.x -= delta;
       this.frame = this.count;
       this.direction = -1;
-     }else if (game.input.right) {
+     }else if (isKeyRightPress) {
       this.x += delta;
       this.frame = this.count;
       this.direction = 1;
@@ -139,11 +187,44 @@ var Player = enchant.Class.create
       this.frame = 0;
      }
      this.scaleX = this.direction;
-     
-     if(game.input.a) {
-     game.pause();
-     }
    
+//     if (isKeySpacePress) {
+//      if (this.jumpCount >= 0) {
+//        this.te = game.frame;
+//     
+//        if (game.frame - this.ts < game.fps * 0.15) {
+//          this.te = game.frame;
+//        }
+//        var delta_t = this.te - this.ts;
+//        console.log(60 * delta_t + " " + 0.5 * GRAVITY * Math.pow(delta_t, 2));
+//        var delta_y = (60 * delta_t - 0.5 * GRAVITY * Math.pow(delta_t, 2));
+//        console.log(delta_y);
+//        this.y -= delta_y;
+//      }
+//     }else{
+//      this.jumpCount--;
+//     }
+     this.olddelta_y;
+     if (isKeySpacePress) {
+      if (this.jumpCount > 0) {
+      if(this.state == 0) {
+        this.state = 1;
+     this.jumpCount = 0;
+        this.olddelta_y = 0;
+        console.log(game.frame + " " + this.ts);
+      }
+     }
+     }else{
+     }
+     if (this.state == 1) {
+      this.te = game.frame;
+      var delta_t = (this.te - this.ts) / 1;
+      var delta_y = (20 * delta_t - 0.5 * 2.5 * Math.pow(delta_t, 2.0));
+     console.log("aa");
+      this.y -= (delta_y - this.olddelta_y);
+      this.olddelta_y = delta_y;
+     }
+     
      // 壁との衝突判定
      // 微調整の余地アリ
      if (this.x < 0) {
@@ -154,7 +235,10 @@ var Player = enchant.Class.create
    
      // 地面との衝突判定
      groundList.forEach (function(aGround, i) {
-       if (that.intersect(aGround)) {
+       if (that.intersect(aGround) || that.y + that.height > game.width) {
+         that.state = 0;
+         that.ts = that.te = 0;
+         that.jumpCount = SPACE_JUMP;
          that.y = aGround.y - that.height;
        }
      });
@@ -169,6 +253,10 @@ var Player = enchant.Class.create
   });
  
  game.rootScene.addChild(this);
+ },
+ 
+ jump: function() {
+  this.y -= 50;
  }
 });
 
@@ -285,7 +373,6 @@ var Score = enchant.Class.create
    },
    
    addPoint: function(point) {
-   console.log(this.score + " " + point);
     this.score += point;
    }
    });
