@@ -151,6 +151,7 @@ var Item = enchant.Class.create
    // spr_height: スプライトの縦幅
    initialize: function(id, delta, spr_width, spr_height) {
    var img_name;
+   var that = this;
    if (id == 0) {
     img_name = IMG_COIN_YELLOW;
    }
@@ -165,13 +166,12 @@ var Item = enchant.Class.create
      this.y += delta;
      
      // 地面との衝突判定
-     for (var i = 0; i < groundList.length; i++) {
-      var aGround = groundList[i];
-      if (this.intersect(aGround)) {
-        this.remove();
-      }
-     }
+     groundList.forEach (function(aGround, i) {
+       if (that.intersect(aGround)) {
+         that.remove();
+       }
      });
+    });
    game.rootScene.addChild(this);
    },
    
