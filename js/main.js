@@ -14,10 +14,14 @@ var IMG_GROUND = 'res/ground_test.png';
 var IMG_PLAYER = 'res/chara1_4x.png';
 var IMG_COIN_YELLOW = 'res/coin_yellow.png';
 var IMG_SCORE_NUM = 'res/score_num_thin.png';
+var IMG_TIMER_NUM = 'res/timer_num.png';
+var IMG_TIMER_NUM_MINI = 'res/timer_num_mini.png';
 var KEY_JUMP = 32;
-var NUM_MAX_ITEM = 50;
+var NUM_MAX_ITEM = 30;
+var GAME_TIMER = 15; // タイマーはfps依存
 var GRAVITY = 9.8;
 var aScore;
+var aTimer;
 
 /*
  * window.onload
@@ -47,23 +51,26 @@ window.onload = function(){
   game.preload([IMG_GROUND,
                 IMG_PLAYER,
                 IMG_COIN_YELLOW,
-                IMG_SCORE_NUM]);
+                IMG_SCORE_NUM,
+                IMG_TIMER_NUM,
+                IMG_TIMER_NUM_MINI]);
   
   
   game.onload = function() {
     
     var pause = new Pause();
     
-    var aPlayer = new Player(200, 200);
+    var aPlayer = new Player(200, game.height - 64);
     
-    var Coin = new Item(0, 10, 32, 32);
-    
+    aGroup = new Group();
+    game.rootScene.addChild(aGroup);
     aScore = new Score();
+    aTimer = new Timer();
     
     //コインを出現させる。
     itemList = new Array();
     for (var i = 0; i < NUM_MAX_ITEM; i++) {
-      var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), 32, 32);
+      var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
       itemList.push(aCoin);
     }
     
@@ -83,7 +90,7 @@ window.onload = function(){
         ("enterframe", function(){
          if (itemList.length < NUM_MAX_ITEM) {
          for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
-         var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), 32, 32);
+         var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
          itemList.push(aCoin);
          }
          }
@@ -141,7 +148,7 @@ var Player = enchant.Class.create
                            case 32:
                             isKeySpacePress = true;
                             if (that.state == 0 || that.jumpCount > 0) {
-                           that.jump();
+                              that.jump();
                               that.ts = game.frame;
                             }
                             break;
@@ -174,6 +181,7 @@ var Player = enchant.Class.create
      }
    
      // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
+     // これでいきます。
      var delta = 10;
      if (isKeyLeftPress) {
       this.x -= delta;
@@ -188,22 +196,6 @@ var Player = enchant.Class.create
      }
      this.scaleX = this.direction;
    
-//     if (isKeySpacePress) {
-//      if (this.jumpCount >= 0) {
-//        this.te = game.frame;
-//     
-//        if (game.frame - this.ts < game.fps * 0.15) {
-//          this.te = game.frame;
-//        }
-//        var delta_t = this.te - this.ts;
-//        console.log(60 * delta_t + " " + 0.5 * GRAVITY * Math.pow(delta_t, 2));
-//        var delta_y = (60 * delta_t - 0.5 * GRAVITY * Math.pow(delta_t, 2));
-//        console.log(delta_y);
-//        this.y -= delta_y;
-//      }
-//     }else{
-//      this.jumpCount--;
-//     }
      this.olddelta_y;
      if (isKeySpacePress) {
       if (this.jumpCount > 0) {
@@ -267,11 +259,13 @@ var Item = enchant.Class.create
    // 引数について
    // id: 落下物の種類 (0:黄色コイン)
    // delta: 1フレーム毎に落下させる量(単位:ピクセル)
+   // group: 追加するグループ
    // spr_width: スプライトの横幅
    // spr_height: スプライトの縦幅
-   initialize: function(id, delta, spr_width, spr_height) {
+   initialize: function(id, delta, group, spr_width, spr_height) {
    var img_name;
    var that = this;
+   this.group = group;
    this.point = 0;
    if (id == 0) {
     img_name = IMG_COIN_YELLOW;
@@ -293,7 +287,7 @@ var Item = enchant.Class.create
        }
      });
     });
-   game.rootScene.addChild(this);
+   group.addChild(this);
    },
    
    // スコアを返す
@@ -304,7 +298,7 @@ var Item = enchant.Class.create
    // 地面やプレイヤーに衝突した時の処理
    remove: function() {
     var that = this;
-    game.rootScene.removeChild(this);
+    this.group.removeChild(this);
     itemList.forEach( function(aItem, i) {
     if (that == aItem) {
       itemList.splice(i, 1);
@@ -313,6 +307,62 @@ var Item = enchant.Class.create
     delete this;
    }
   });
+
+// タイマー表示
+var Timer = enchant.Class.create
+(enchant.Group, {
+ initialize: function() {
+ enchant.Group.call(this);
+ var that = this;
+ this.framecount = 0;
+ this.x = 310;
+ this.y = 10;
+ this.digits = new Array();
+ for (var i = 0; i < 4; i++) {
+  var aDigit = this.digits[i];
+  if(i < 2) {
+    aDigit = new Sprite(80, 90);
+    aDigit.image = game.assets[IMG_TIMER_NUM];
+    aDigit.x = i * aDigit.width;
+  }else{
+    aDigit = new Sprite(30, 34);
+    aDigit.image = game.assets[IMG_TIMER_NUM_MINI];
+    aDigit.x = this.digits[1].x + this.digits[1].width + (i-2) * aDigit.width;
+    aDigit.y = this.digits[1].y + this.digits[1].height - aDigit.height;
+  }
+ this.digits.push(aDigit);
+ this.addChild(aDigit);
+ }
+ 
+ game.addEventListener
+  ("enterframe", function() {
+   console.log(this.framecount);
+   that.framecount++;
+   var last = GAME_TIMER * game.fps - that.framecount;
+   var sec = parseInt(last / game.fps);
+   var msec = (last / game.fps) - sec;
+   var secAry = String(sec).split("");
+   if (sec < 10) {
+    secAry = '0' + secAry;
+   }
+   var msecAry = String(msec).split("");
+   
+   if (last < 0) {
+    that.framecount = 0;
+   }
+   for (var i = 0; i < 4; i++) {
+    if (i < 2) {
+      that.digits[i].frame = secAry[i];
+    }else{
+      that.digits[i].frame = msecAry[i];
+    }
+   }
+   });
+ 
+ game.rootScene.addChild(this);
+ }
+ });
+
 
 // スコア表示
 var Score = enchant.Class.create
@@ -404,4 +454,3 @@ var Pause = enchant.Class.create
  game.rootScene.addChild(this);
  }
  });
-
