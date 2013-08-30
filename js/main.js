@@ -17,8 +17,8 @@ var IMG_SCORE_NUM = 'res/score_num_thin.png';
 var IMG_TIMER_NUM = 'res/timer_num.png';
 var IMG_TIMER_NUM_MINI = 'res/timer_num_mini.png';
 var KEY_JUMP = 32;
-var NUM_MAX_ITEM = 30;
-var GAME_TIMER = 15; // タイマーはfps依存
+var NUM_MAX_ITEM = 50;
+var GAME_TIMER = 30; // タイマーはfps依存
 var GRAVITY = 9.8;
 var aScore;
 var aTimer;
@@ -38,7 +38,7 @@ window.onload = function(){
   game = new Core(800, 600);
   
   // フレームレートの設定
-  game.fps = 29.97;
+  game.fps = 30;
   
   game.scale = 1.0;
   
