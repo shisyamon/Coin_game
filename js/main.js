@@ -107,149 +107,136 @@ window.onload = function(){
   game.start();
 };
 
-var Player = enchant.Class.create
-(enchant.Sprite,{
- 
- initialize: function(x, y) {
-  enchant.Sprite.call(this, 64, 64);
-  // enchant.jsでは変数を予め宣言する必要は無い。
-  // フィールドに値を設定するときはthis.xxxのようにして書く。
-  // x, y: 座標
-  // frame: 表示する画像
-  // count: フレームカウント用
-  // direction: キャラの向き。1が右、-1が左
-  var that = this;
- var SPACE_JUMP = 2;
- var VELOCITY = 9.8;
-  this.image = game.assets[IMG_PLAYER];
-  this.x = x;
-  this.y = y;
-  this.frame = 0;
-  this.count = 0;
-  this.direction = 1;
- this.ts = game.frame;
- this.te = game.frame;
-  this.state = 0;
- this.oldState = 0;
- this.jumpCount = SPACE_JUMP;
- 
- var isKeyDown = false;
- var isKeyUpPress = false;
- var isKeyDownPress = false;
- var isKeyLeftPress = false;
- var isKeyRightPress = false;
- var isKeySpacePress = false;
- 
- document.addEventListener("")
- 
- document.addEventListener('keydown', function(e) {
-                           
-                           switch(e.keyCode) {
-                           case 32:
-                            isKeySpacePress = true;
-                            if (that.state == 0 || that.jumpCount > 0) {
-                              that.jump();
-                              that.ts = game.frame;
-                            }
-                            break;
-                           case 37: isKeyLeftPress = true; break;
-                           case 38: isKeyUpPress = true; break;
-                           case 39: isKeyRightPress = true; break;
-                           case 40: isKeyDownPress = true; break;
-                           }
-                           
-                           }, true);
- document.addEventListener('keyup', function(e) {
-                           
-                           switch(e.keyCode) {
-                           case 32: isKeySpacePress = false; break;
-                           case 37: isKeyLeftPress = false; break;
-                           case 38: isKeyUpPress = false; break;
-                           case 39: isKeyRightPress = false; break;
-                           case 40: isKeyDownPress = false; break;
-                           }
-                           
-                           }, true);
+var Player = enchant.Class.create(enchant.Sprite,{
 
-  this.addEventListener
-    ('enterframe', function() {
-     //this.y += 10;
-     
-     this.count++;
-     if (this.count > 2) {
-      this.count = 1;
-     }
-   
-     // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
-     // これでいきます。
-     var delta = 10;
-     if (isKeyLeftPress) {
-      this.x -= delta;
-      this.frame = this.count;
-      this.direction = -1;
-     }else if (isKeyRightPress) {
-      this.x += delta;
-      this.frame = this.count;
-      this.direction = 1;
-     }else{
-      this.frame = 0;
-     }
-     this.scaleX = this.direction;
-   
-     this.olddelta_y;
-     if (isKeySpacePress) {
-      if (this.jumpCount > 0) {
-      if(this.state == 0) {
-        this.state = 1;
-     this.jumpCount = 0;
-        this.olddelta_y = 0;
-        console.log(game.frame + " " + this.ts);
+  initialize: function(x, y) {
+    enchant.Sprite.call(this, 64, 64);
+    // enchant.jsでは変数を予め宣言する必要は無い。
+    // フィールドに値を設定するときはthis.xxxのようにして書く。
+    // x, y: 座標
+    // frame: 表示する画像
+    // count: フレームカウント用
+    // direction: キャラの向き。1が右、-1が左
+    var that = this;
+    var SPACE_JUMP = 2;
+    var VELOCITY = 9.8;
+    this.image = game.assets[IMG_PLAYER];
+    this.x = x;
+    this.y = y;
+    this.frame = 0;
+    this.count = 0;
+    this.direction = 1;
+    this.ts = game.frame;
+    this.te = game.frame;
+    this.state = 0;
+    this.olddelta_y = 0;
+    this.oldState = 0;
+    this.jumpCount = SPACE_JUMP;
+
+    var isKeyDown = false;
+    var isKeyUpPress = false;
+    var isKeyDownPress = false;
+    var isKeyLeftPress = false;
+    var isKeyRightPress = false;
+    var isKeySpacePress = false;
+
+    document.addEventListener("")
+
+    document.addEventListener('keydown', function(e) {
+      switch(e.keyCode) {
+      case 32:
+        isKeySpacePress = true;
+        that.jump(1);
+        break;
+      case 37: isKeyLeftPress = true; break;
+      case 38: isKeyUpPress = true; break;
+      case 39: isKeyRightPress = true; break;
+      case 40: isKeyDownPress = true; break;
       }
-     }
-     }else{
-     }
-     if (this.state == 1) {
-      this.te = game.frame;
-      var delta_t = (this.te - this.ts) / 1;
-      var delta_y = (20 * delta_t - 0.5 * 2.5 * Math.pow(delta_t, 2.0));
-     console.log("aa");
+    }, true);
+    document.addEventListener('keyup', function(e) {
+      switch(e.keyCode) {
+      case 32: isKeySpacePress = false; break;
+      case 37: isKeyLeftPress = false; break;
+      case 38: isKeyUpPress = false; break;
+      case 39: isKeyRightPress = false; break;
+      case 40: isKeyDownPress = false; break;
+      }
+    }, true);
+
+    this.addEventListener('enterframe', function() {
+      //this.y += 10;
+
+      this.count++;
+      if (this.count > 2) {
+        this.count = 1;
+      }
+
+      // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
+      // これでいきます。
+      var delta = 10;
+      if (isKeyLeftPress) {
+        this.x -= delta;
+        this.frame = this.count;
+        this.direction = -1;
+      }else if (isKeyRightPress) {
+        this.x += delta;
+        this.frame = this.count;
+        this.direction = 1;
+      }else{
+        this.frame = 0;
+      }
+      this.scaleX = this.direction;
+
+      this.jump();
+
+      // 壁との衝突判定
+      // 微調整の余地アリ
+      if (this.x < 0) {
+        this.x = 0;
+      }else if(this.x > game.width - this.width) {
+        this.x = game.width - this.width;
+      }
+
+      // 地面との衝突判定
+      groundList.forEach (function(aGround, i) {
+        if (that.intersect(aGround) || that.y + that.height > game.width) {
+          that.state = 0;
+          that.ts = that.te = 0;
+          that.jumpCount = SPACE_JUMP;
+          that.y = aGround.y - that.height;
+        }
+      });
+
+      // アイテムとの衝突判定
+      itemList.forEach (function(aItem, i) {
+        if (that.intersect(aItem)) {
+          aScore.addPoint(aItem.getPoint());
+          aItem.remove();
+        }
+      });
+    });
+
+    game.rootScene.addChild(this);
+  },
+
+  jump: function(jumpFlag){
+    if (jumpFlag == 1 && this.jumpCount > 0) {
+      this.y -= 30;
+      this.state = 1;
+      this.jumpCount--;
+      this.olddelta_y = 0;
+      this.ts = this.te = 0;
+    }
+    if (this.state == 1) {
+      this.te++;
+      this.frame = 1;
+      var delta_t = (this.te - this.ts) / 1.0;
+      var delta_y = (23 * delta_t - 0.5 * 2.5 * Math.pow(delta_t, 2.0));
       this.y -= (delta_y - this.olddelta_y);
-      this.olddelta_y = delta_y;
-     }
-     
-     // 壁との衝突判定
-     // 微調整の余地アリ
-     if (this.x < 0) {
-      this.x = 0;
-     }else if(this.x > game.width - this.width) {
-      this.x = game.width - this.width;
-     }
-   
-     // 地面との衝突判定
-     groundList.forEach (function(aGround, i) {
-       if (that.intersect(aGround) || that.y + that.height > game.width) {
-         that.state = 0;
-         that.ts = that.te = 0;
-         that.jumpCount = SPACE_JUMP;
-         that.y = aGround.y - that.height;
-       }
-     });
-     
-     // アイテムとの衝突判定
-     itemList.forEach (function(aItem, i) {
-      if (that.intersect(aItem)) {
-        aScore.addPoint(aItem.getPoint());
-        aItem.remove();
-      }
-     });
-  });
- 
- game.rootScene.addChild(this);
- },
- 
- jump: function() {
-  this.y -= 50;
- }
+      this.olddelta_y = delta_y;	
+    } 
+  }
 });
 
 // enchant.jsのスプライト(Sprite)クラスを継承し、Itemクラスを作成。
@@ -336,7 +323,6 @@ var Timer = enchant.Class.create
  
  game.addEventListener
   ("enterframe", function() {
-   console.log(this.framecount);
    that.framecount++;
    var last = GAME_TIMER * game.fps - that.framecount;
    var sec = parseInt(last / game.fps);
@@ -429,28 +415,26 @@ var Score = enchant.Class.create
 
 // デバッグ用の一時停止プログラム。
 // 画面右上の四角をクリックすると停止と実行が切り替わる。
-var Pause = enchant.Class.create
-(enchant.Entity, {
- initialize: function() {
- enchant.Entity.call(this);
+var Pause = enchant.Class.create(enchant.Entity, {
+  initialize: function() {
+    enchant.Entity.call(this);
 
- this.x = 745;
- this.y = 10;
- this.width = 50;
- this.height = 50;
- this.flag = 1;
- this.touchEnabled = "enabled";
- this.backgroundColor = "#ffa500";
- this.addEventListener
- ("touchstart", function() {
-  if (this.flag == 1) {
-  game.pause();
-  this.flag = 2;
-  }else if (this.flag == 2) {
-  game.resume();
-  this.flag = 1;
+    this.x = 745;
+    this.y = 10;
+    this.width = 50;
+    this.height = 50;
+    this.flag = 1;
+    this.touchEnabled = "enabled";
+    this.backgroundColor = "#ffa500";
+    this.addEventListener("touchstart", function() {
+      if (this.flag == 1) {
+        game.pause();
+        this.flag = 2;
+      }else if (this.flag == 2) {
+        game.resume();
+        this.flag = 1;
+      }
+    });
+    game.rootScene.addChild(this);
   }
-  });
- game.rootScene.addChild(this);
- }
- });
+});
