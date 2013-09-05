@@ -17,7 +17,7 @@ var IMG_SCORE_NUM = 'res/score_num_thin.png';
 var IMG_TIMER_NUM = 'res/timer_num.png';
 var IMG_TIMER_NUM_MINI = 'res/timer_num_mini.png';
 var KEY_JUMP = 32;
-var NUM_MAX_ITEM = 50;
+var NUM_MAX_ITEM = 10;
 var GAME_TIMER = 30; // タイマーはfps依存
 var GRAVITY = 9.8;
 var aScore;
@@ -58,54 +58,100 @@ window.onload = function(){
   
   game.onload = function() {
     
-    var pause = new Pause();
-    
-    var aPlayer = new Player(200, game.height - 64);
-    
-    aGroup = new Group();
-    game.rootScene.addChild(aGroup);
-    aScore = new Score();
-    aTimer = new Timer();
-    
-    //コインを出現させる。
-    itemList = new Array();
-    for (var i = 0; i < NUM_MAX_ITEM; i++) {
-      var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
-      itemList.push(aCoin);
-    }
-    
-    // 地面を敷き詰める。
-    groundList = new Array();
-    for (var x = 0; x < game.width; x += 64) {
-      var ground = new Sprite(64, 64);
-      ground.image = game.assets[IMG_GROUND];
-      ground.x = x;
-      ground.y = game.height - 64;
-      
-      // 衝突判定のために配列に保存する。
-      // 衝突させる物体(コイン、アイテムなど)が増えるにつれ重くなるので1枚のデカいテクスチャに変える可能性アリ
-      groundList.push(ground);
-      
-      game.rootScene.addEventListener
-        ("enterframe", function(){
-         if (itemList.length < NUM_MAX_ITEM) {
-         for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
-         var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
-         itemList.push(aCoin);
-         }
-         }
-         });
-      // 画面に出す。
-      game.rootScene.addChild(ground);
-      
-      
-    }
+    var aTitle = new Title();
+    aTitle.addEventListener("gamestart", function () {
+      Game();
+    });
+    // 大幅変更前
     
     // 操作キャラのフレーム毎の処理
     // TODO: spriteクラスを継承してplayerクラスを作り、フィールドを定義したり自作メソッドが呼び出せるようにする。
   }
   game.start();
 };
+
+var Title = enchant.Class.create(enchant.Scene, {
+   initialize: function() {
+     var that = this;
+     enchant.Scene.call(this);
+     this.backgroundColor = "#FFFFFF";
+     var aTitle = new Label("コインゲーム ()");
+     aTitle.x = (game.width / 2) - (aTitle.width / 2);
+     aTitle.y = 100;
+     aTitle.font = "48px 'メイリオ', 'ＭＳ ゴシック'";
+     var startbutton = new Entity();
+     startbutton.backgroundColor = "#FFA500";
+     startbutton.width = 400;
+     startbutton.height = 50;
+     startbutton.x = (game.width - startbutton.width) / 2;
+     startbutton.y = 400;
+     startbutton.touchEnabled = true;
+     this.addChild(startbutton);
+     this.addChild(aTitle);
+     startbutton.addEventListener('touchstart', function(){
+       game.popScene();
+       that.remove;
+       var e = new enchant.Event("gamestart");
+       that.dispatchEvent(e);
+     });
+     game.pushScene(this);
+   }
+});
+
+var Game = enchant.Class.create(enchant.Scene, {
+  initialize: function() {
+    var that = this;
+    enchant.Scene.call(this);
+    game.pushScene(this);
+    var pause = new Pause();
+    this.addChild(pause);
+    var aPlayer = new Player(200, game.height - 64);
+    this.addChild(aPlayer);
+    //  var testPlayer = new Player(300, 100);
+    //  testPlayer.tl.moveTo(300, game.height -128, 45, enchant.Easing.CUBIC_EASEOUT);
+    aGroup = new Group();
+    this.addChild(aGroup);
+    aScore = new Score();
+    this.addChild(aScore);
+    aTimer = new Timer();
+    this.addChild(aTimer);
+  
+  //コインを出現させる。
+  itemList = [];
+  for (var i = 0; i < NUM_MAX_ITEM; i++) {
+    var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
+    itemList.push(aCoin);
+  }
+  
+  // 地面を敷き詰める。
+  groundList = [];
+  for (var x = 0; x < game.width; x += game.width) {
+    var ground = new Sprite(game.width, 64);
+    ground.image = game.assets[IMG_GROUND];
+    ground.x = x;
+    ground.y = game.height - 64;
+    
+    // 衝突判定のために配列に保存する。
+    // 衝突させる物体(コイン、アイテムなど)が増えるにつれ重くなるので1枚のデカいテクスチャに変える可能性アリ
+    groundList.push(ground);
+    
+    // 画面に出す。
+    this.addChild(ground);
+    
+  }
+  
+  this.addEventListener
+  ("enterframe", function(){
+   if (itemList.length < NUM_MAX_ITEM) {
+   for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
+   var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
+   itemList.push(aCoin);
+   }
+   }
+   });
+    
+  }
+});
 
 var Player = enchant.Class.create(enchant.Sprite,{
 
@@ -139,8 +185,6 @@ var Player = enchant.Class.create(enchant.Sprite,{
     var isKeyLeftPress = false;
     var isKeyRightPress = false;
     var isKeySpacePress = false;
-
-    document.addEventListener("")
 
     document.addEventListener('keydown', function(e) {
       switch(e.keyCode) {
@@ -216,8 +260,6 @@ var Player = enchant.Class.create(enchant.Sprite,{
         }
       });
     });
-
-    game.rootScene.addChild(this);
   },
 
   jump: function(jumpFlag){
@@ -344,8 +386,6 @@ var Timer = enchant.Class.create
     }
    }
    });
- 
- game.rootScene.addChild(this);
  }
  });
 
@@ -372,7 +412,7 @@ var Score = enchant.Class.create
    this.digits.push(aDigit);
    this.addChild(aDigit);
    }
-   game.rootScene.addChild(this);
+   
    this.addEventListener
     ("enterframe", function(){
      if (this.score > 9999999) {
@@ -418,7 +458,6 @@ var Score = enchant.Class.create
 var Pause = enchant.Class.create(enchant.Entity, {
   initialize: function() {
     enchant.Entity.call(this);
-
     this.x = 745;
     this.y = 10;
     this.width = 50;
@@ -435,6 +474,5 @@ var Pause = enchant.Class.create(enchant.Entity, {
         this.flag = 1;
       }
     });
-    game.rootScene.addChild(this);
   }
 });
