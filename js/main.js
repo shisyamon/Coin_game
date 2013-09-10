@@ -16,8 +16,11 @@ var IMG_COIN_YELLOW = 'res/coin_yellow.png';
 var IMG_SCORE_NUM = 'res/score_num_thin.png';
 var IMG_TIMER_NUM = 'res/timer_num.png';
 var IMG_TIMER_NUM_MINI = 'res/timer_num_mini.png';
+var IMG_TITLE = 'res/title.png';
+var IMG_STARTBUTTON = 'res/start.png';
+var IMG_KEY_INFO = 'res/info_key.png';
 var KEY_JUMP = 32;
-var NUM_MAX_ITEM = 10;
+var NUM_MAX_ITEM = 30;
 var GAME_TIMER = 30; // タイマーはfps依存
 var GRAVITY = 9.8;
 var aScore;
@@ -53,7 +56,10 @@ window.onload = function(){
                 IMG_COIN_YELLOW,
                 IMG_SCORE_NUM,
                 IMG_TIMER_NUM,
-                IMG_TIMER_NUM_MINI]);
+                IMG_TIMER_NUM_MINI,
+                IMG_TITLE,
+                IMG_STARTBUTTON,
+                IMG_KEY_INFO]);
   
   
   game.onload = function() {
@@ -74,11 +80,27 @@ var Title = enchant.Class.create(enchant.Scene, {
    initialize: function() {
      var that = this;
      enchant.Scene.call(this);
+     var textGroup = new Group();
+     this.addChild(textGroup);
+     var titlePic = game.assets[IMG_TITLE];
+     var startbuttonPic = game.assets[IMG_STARTBUTTON];
+     var keyinfoPic = game.assets[IMG_KEY_INFO];
+     var titleSprite = new Sprite(titlePic.width, titlePic.height);
+     titleSprite.image = titlePic;
+     titleSprite.x = (game.width - titleSprite.width) / 2;
+     titleSprite.y = 80; 
+     textGroup.addChild(titleSprite);
+     var startbuttonSprite = new Sprite(startbuttonPic.width, startbuttonPic.height);
+     startbuttonSprite.image = startbuttonPic;
+     startbuttonSprite.x = (game.width - startbuttonSprite.width) / 2;
+     startbuttonSprite.y = 350;
+     textGroup.addChild(startbuttonSprite);
+     var keyinfoSprite = new Sprite(keyinfoPic.width, keyinfoPic.height);
+     keyinfoSprite.image = keyinfoPic;
+     keyinfoSprite.x = (game.width - keyinfoSprite.width) / 2;
+     keyinfoSprite.y = 550;
+     textGroup.addChild(keyinfoSprite);
      this.backgroundColor = "#FFFFFF";
-     var aTitle = new Label("コインゲーム ()");
-     aTitle.x = (game.width / 2) - (aTitle.width / 2);
-     aTitle.y = 100;
-     aTitle.font = "48px 'メイリオ', 'ＭＳ ゴシック'";
      var startbutton = new Entity();
      startbutton.backgroundColor = "#FFA500";
      startbutton.width = 400;
@@ -87,10 +109,15 @@ var Title = enchant.Class.create(enchant.Scene, {
      startbutton.y = 400;
      startbutton.touchEnabled = true;
      this.addChild(startbutton);
-     this.addChild(aTitle);
+     startbuttonSprite.addEventListener('touchstart', function(){
+       game.popScene();
+       delete that;
+       var e = new enchant.Event("gamestart");
+       that.dispatchEvent(e);
+     });
      startbutton.addEventListener('touchstart', function(){
        game.popScene();
-       that.remove;
+       delete that;
        var e = new enchant.Event("gamestart");
        that.dispatchEvent(e);
      });
@@ -103,14 +130,14 @@ var Game = enchant.Class.create(enchant.Scene, {
     var that = this;
     enchant.Scene.call(this);
     game.pushScene(this);
-    var pause = new Pause();
-    this.addChild(pause);
     var aPlayer = new Player(200, game.height - 64);
     this.addChild(aPlayer);
     //  var testPlayer = new Player(300, 100);
     //  testPlayer.tl.moveTo(300, game.height -128, 45, enchant.Easing.CUBIC_EASEOUT);
     aGroup = new Group();
     this.addChild(aGroup);
+    var pause = new Pause();
+    this.addChild(pause);
     aScore = new Score();
     this.addChild(aScore);
     aTimer = new Timer();
@@ -140,15 +167,14 @@ var Game = enchant.Class.create(enchant.Scene, {
     
   }
   
-  this.addEventListener
-  ("enterframe", function(){
-   if (itemList.length < NUM_MAX_ITEM) {
-   for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
-   var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
-   itemList.push(aCoin);
-   }
-   }
-   });
+  this.addEventListener("enterframe", function(){
+    if (itemList.length < NUM_MAX_ITEM) {
+      for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
+        var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
+        itemList.push(aCoin);
+      }
+    }
+  });
     
   }
 });
