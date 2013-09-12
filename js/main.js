@@ -114,7 +114,7 @@ var Title = enchant.Class.create(enchant.Scene, {
       },
     // タイトル画面の裏で動くデモアニメーション
     demo: function(aGroup){
-      var max_coin = 20;
+      var max_coin = 30;
       var that = this;
       var secondGroup = new Group();
       this.objectList = [];
@@ -167,8 +167,15 @@ var Title = enchant.Class.create(enchant.Scene, {
         this.addChild(pause);
         aScore = new Score();
         this.addChild(aScore);
+        aScore.y = -64;
+        aScore.tl.moveTo(aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
+        console.log(aScore.x + " " + aScore.y);
         aTimer = new Timer();
         this.addChild(aTimer);
+        var tempy = aTimer.y;
+        console.log(aTimer.y);
+        aTimer.y = -90;
+        aTimer.tl.moveTo(aTimer.x, tempy, game.fps, enchant.Easing.BOUNCE_EASEOUT).delay(game.fps * 0.2).then(function (){this.startCounter();});
         
         //コインを出現させる。
         for (var i = 0; i < NUM_MAX_ITEM; i++) {
@@ -198,6 +205,9 @@ var Title = enchant.Class.create(enchant.Scene, {
                   }
                 }
             });
+            
+          },
+          ready: function(){
             
           }
       });
@@ -397,6 +407,7 @@ var Title = enchant.Class.create(enchant.Scene, {
       (enchant.Group, {
           initialize: function() {
             enchant.Group.call(this);
+            this.countEnabled = false;
             var that = this;
             this.framecount = 0;
             this.x = 310;
@@ -420,7 +431,9 @@ var Title = enchant.Class.create(enchant.Scene, {
             
             game.addEventListener
               ("enterframe", function() {
-                that.framecount++;
+                if (that.countEnabled == true) {
+                  that.framecount++;
+                }
                 var last = GAME_TIMER * game.fps - that.framecount;
                 var sec = parseInt(last / game.fps);
                 var msec = (last / game.fps) - sec;
@@ -441,6 +454,12 @@ var Title = enchant.Class.create(enchant.Scene, {
                   }
                 }
             });
+          },
+          startCounter: function(){
+            this.countEnabled = true;
+          },
+          stopCounter: function() {
+            this.countEnabled = false;
           }
       });
       
@@ -454,7 +473,7 @@ var Title = enchant.Class.create(enchant.Scene, {
             this.x = 10;
             this.y = 20;
             this.digits = new Array();
-            this.score = 1500;
+            this.score = 0;
             this.score2 = 0;
             // スコアは8桁
             for (var i = 0; i < 8; i++) {
