@@ -80,6 +80,9 @@ var Title = enchant.Class.create(enchant.Scene, {
     initialize: function() {
       var that = this;
       enchant.Scene.call(this);
+      var demoGroup = new Group();
+      this.addChild(demoGroup);
+      this.demo(demoGroup);
       var textGroup = new Group();
       this.addChild(textGroup);
       var titlePic = game.assets[IMG_TITLE];
@@ -108,7 +111,38 @@ var Title = enchant.Class.create(enchant.Scene, {
             that.dispatchEvent(e);
         });
         game.pushScene(this);
+      },
+    // タイトル画面の裏で動くデモアニメーション
+    demo: function(aGroup){
+      var max_coin = 20;
+      var that = this;
+      groundList = [];
+      var aGround = new Sprite(game.width, 64);
+      aGround.image = game.assets[IMG_GROUND];
+      aGround.x = 0;
+      aGround.y = game.height - aGround.height;
+      groundList.push(aGround);
+      aGroup.addChild(aGround);
+      
+      
+      // このへん要修正
+      // Itemクラスのコンストラクタと引数を見直す必要アリ。
+      itemList = [];
+      for (var i = 0; i < max_coin; i++) {
+//        var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
+//        itemList.push(aCoin);
       }
+      
+      var aLayer = new Entity();
+      aLayer.backgroundColor = "#FFFFFF";
+      aLayer.width = game.width;
+      aLayer.height = game.height;
+      aLayer.x = 0;
+      aLayer.y = 0;
+      aLayer.opacity = 0.6;
+      aGroup.addChild(aLayer);
+     
+    }
   });
   
   var Game = enchant.Class.create(enchant.Scene, {
@@ -116,7 +150,10 @@ var Title = enchant.Class.create(enchant.Scene, {
         var that = this;
         enchant.Scene.call(this);
         game.pushScene(this);
-        var aPlayer = new Player(200, game.height - 64);
+        this.objectList = [];
+        var itemList = this.objectList['item'] = [];
+        var groundList = this.objectList['ground'] = [];
+        var aPlayer = new Player(this.objectList);
         this.addChild(aPlayer);
         //  var testPlayer = new Player(300, 100);
         //  testPlayer.tl.moveTo(300, game.height -128, 45, enchant.Easing.CUBIC_EASEOUT);
@@ -130,14 +167,11 @@ var Title = enchant.Class.create(enchant.Scene, {
         this.addChild(aTimer);
         
         //コインを出現させる。
-        itemList = [];
         for (var i = 0; i < NUM_MAX_ITEM; i++) {
-            var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
-            itemList.push(aCoin);
-          }
+          var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, this.objectList);
+        }
           
           // 地面を敷き詰める。
-          groundList = [];
           for (var x = 0; x < game.width; x += game.width) {
             var ground = new Sprite(game.width, 64);
             ground.image = game.assets[IMG_GROUND];
@@ -150,14 +184,13 @@ var Title = enchant.Class.create(enchant.Scene, {
             
             // 画面に出す。
             this.addChild(ground);
-            
           }
           
             this.addEventListener("enterframe", function(){
               if (itemList.length < NUM_MAX_ITEM) {
                 for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
-                    var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
-                    itemList.push(aCoin);
+                    var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, this.objectList);
+//                    itemList.push(aCoin);
                   }
                 }
             });
@@ -167,7 +200,7 @@ var Title = enchant.Class.create(enchant.Scene, {
       
       var Player = enchant.Class.create(enchant.Sprite,{
           
-          initialize: function(x, y) {
+          initialize: function(objectList) {
             enchant.Sprite.call(this, 64, 64);
             // enchant.jsでは変数を予め宣言する必要は無い。
             // フィールドに値を設定するときはthis.xxxのようにして書く。
@@ -179,8 +212,11 @@ var Title = enchant.Class.create(enchant.Scene, {
             var SPACE_JUMP = 2;
             var VELOCITY = 9.8;
             this.image = game.assets[IMG_PLAYER];
-            this.x = x;
-            this.y = y;
+            this.objectList = objectList;
+            this.x = 200;
+            this.y = game.height - 64;
+//            this.x = x;
+//            this.y = y;
             this.frame = 0;
             this.count = 0;
             this.direction = 1;
@@ -255,7 +291,7 @@ var Title = enchant.Class.create(enchant.Scene, {
                 }
                 
                 // 地面との衝突判定
-                  groundList.forEach (function(aGround, i) {
+                  this.objectList['ground'].forEach (function(aGround, i) {
                     if (that.intersect(aGround) || that.y + that.height > game.width) {
                       that.state = 0;
                       that.ts = that.te = 0;
@@ -265,7 +301,7 @@ var Title = enchant.Class.create(enchant.Scene, {
                 });
                 
                 // アイテムとの衝突判定
-                  itemList.forEach (function(aItem, i) {
+                  this.objectList['item'].forEach (function(aItem, i) {
                     if (that.intersect(aItem)) {
                       aScore.addPoint(aItem.getPoint());
                       aItem.remove();
@@ -303,17 +339,19 @@ var Title = enchant.Class.create(enchant.Scene, {
           // group: 追加するグループ
           // spr_width: スプライトの横幅
           // spr_height: スプライトの縦幅
-          initialize: function(id, delta, group, spr_width, spr_height) {
+          initialize: function(id, delta, group, objectList) {
             var img_name;
             var that = this;
+            this.objectList = objectList;
             this.group = group;
             this.point = 0;
             if (id == 0) {
               img_name = IMG_COIN_YELLOW;
               this.point = 100;
             }
-            enchant.Sprite.call(this, spr_width, spr_height, img_name);
-            this.image = game.assets[img_name];
+            var aImage = game.assets[img_name];
+            enchant.Sprite.call(this, aImage.width, aImage.height, img_name);
+            this.image = aImage;
             // アイテムの出現位置をセット。x座標は画面内に収まるように、y座標は画面外にセット。
             this.x = Math.round(Math.random() * (game.width - this.width));
             this.y = -1 * Math.round(Math.random() * 200);
@@ -322,12 +360,13 @@ var Title = enchant.Class.create(enchant.Scene, {
               ("enterframe", function() {
                 this.y += delta;
                 // 地面との衝突判定
-                  groundList.forEach (function(aGround, i) {
+                  that.objectList['ground'].forEach (function(aGround, i) {
                     if (that.intersect(aGround)) {
                       that.remove();
                     }
                 });
             });
+            this.objectList['item'].push(this);
             group.addChild(this);
           },
           
@@ -340,9 +379,9 @@ var Title = enchant.Class.create(enchant.Scene, {
           remove: function() {
             var that = this;
             this.group.removeChild(this);
-              itemList.forEach( function(aItem, i) {
+              this.objectList['item'].forEach( function(aItem, i) {
                 if (that == aItem) {
-                  itemList.splice(i, 1);
+                  that.objectList['item'].splice(i, 1);
                 }
             });
             delete this;
