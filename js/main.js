@@ -116,7 +116,10 @@ var Title = enchant.Class.create(enchant.Scene, {
     demo: function(aGroup){
       var max_coin = 20;
       var that = this;
-      groundList = [];
+      var secondGroup = new Group();
+      this.objectList = [];
+      var groundList = this.objectList['ground'] = [];
+      var itemList = this.objectList['item'] = [];
       var aGround = new Sprite(game.width, 64);
       aGround.image = game.assets[IMG_GROUND];
       aGround.x = 0;
@@ -124,15 +127,16 @@ var Title = enchant.Class.create(enchant.Scene, {
       groundList.push(aGround);
       aGroup.addChild(aGround);
       
-      
-      // このへん要修正
-      // Itemクラスのコンストラクタと引数を見直す必要アリ。
-      itemList = [];
       for (var i = 0; i < max_coin; i++) {
-//        var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, 32, 32);
-//        itemList.push(aCoin);
+        new Item(0, Math.round(Math.random() * 2 + 7), secondGroup, this.objectList);
       }
       
+      aGroup.addEventListener('enterframe', function(){
+        for (var i = 0; i < max_coin - itemList.length; i++) {
+          new Item(0, Math.round(Math.random() * 2 + 7), secondGroup, that.objectList);
+        }
+      });
+      aGroup.addChild(secondGroup);
       var aLayer = new Entity();
       aLayer.backgroundColor = "#FFFFFF";
       aLayer.width = game.width;
