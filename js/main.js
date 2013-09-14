@@ -19,7 +19,8 @@ var IMG_TIMER_NUM_MINI = 'res/timer_num_mini.png';
 var IMG_TITLE = 'res/title.png';
 var IMG_STARTBUTTON = 'res/start.png';
 var IMG_KEY_INFO = 'res/info_key.png';
-var FPS = 30;
+var FPS = 60;
+var GAME_SPEED = 1;
 var KEY_JUMP = 32;
 var NUM_MAX_ITEM = 30;
 var GAME_TIMER = 30; // タイマーはfps依存
@@ -43,6 +44,9 @@ window.onload = function(){
   
   // フレームレートの設定
   game.fps = FPS;
+  
+  // ゲームスピードの設定
+  game.speed = GAME_SPEED * (30 / game.fps);
   
   game.scale = 1.0;
   
@@ -312,7 +316,7 @@ var Title = enchant.Class.create(enchant.Scene, {
               this.addEventListener('enterframe', function() {
                 //this.y += 10;
                 
-                this.count++;
+                this.count += game.speed;
                 if (this.count > 2) {
                   this.count = 1;
                 }
@@ -321,11 +325,11 @@ var Title = enchant.Class.create(enchant.Scene, {
                 // これでいきます。
                 var delta = 10;
                 if (isKeyLeftPress) {
-                  this.x -= delta;
+                  this.x -= game.speed * delta;
                   this.frame = this.count;
                   this.direction = -1;
                 }else if (isKeyRightPress) {
-                  this.x += delta;
+                  this.x += game.speed * delta;
                   this.frame = this.count;
                   this.direction = 1;
                 }else{
@@ -367,17 +371,17 @@ var Title = enchant.Class.create(enchant.Scene, {
           
           jump: function(jumpFlag){
             if (jumpFlag == 1 && this.jumpCount > 0) {
-              this.y -= 30;
+              this.y -= 40;
               this.state = 1;
               this.jumpCount--;
               this.olddelta_y = 0;
               this.ts = this.te = 0;
             }
             if (this.state == 1) {
-              this.te++;
+              this.te += game.speed;
               this.frame = 1;
               var delta_t = (this.te - this.ts) / 1.0;
-              var delta_y = (23 * delta_t - 0.5 * 2.5 * Math.pow(delta_t, 2.0));
+              var delta_y = (23 * delta_t - 0.5 * 3.2 * Math.pow(delta_t, 2.0));
               this.y -= (delta_y - this.olddelta_y);
               this.olddelta_y = delta_y;	
             } 
@@ -419,7 +423,7 @@ var Title = enchant.Class.create(enchant.Scene, {
             // フレーム毎の処理
             this.addEventListener("enterframe", function() {
               if (that.actionEnabled == true) {
-                this.y += delta;
+                this.y += game.speed * delta;
               }
               // 地面との衝突判定
               that.objectList['ground'].forEach (function(aGround, i) {
