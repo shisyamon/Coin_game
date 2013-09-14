@@ -19,6 +19,7 @@ var IMG_TIMER_NUM_MINI = 'res/timer_num_mini.png';
 var IMG_TITLE = 'res/title.png';
 var IMG_STARTBUTTON = 'res/start.png';
 var IMG_KEY_INFO = 'res/info_key.png';
+var FPS = 30;
 var KEY_JUMP = 32;
 var NUM_MAX_ITEM = 30;
 var GAME_TIMER = 30; // タイマーはfps依存
@@ -41,7 +42,7 @@ window.onload = function(){
   game = new Core(800, 600);
   
   // フレームレートの設定
-  game.fps = 30;
+  game.fps = FPS;
   
   game.scale = 1.0;
   
@@ -128,12 +129,14 @@ var Title = enchant.Class.create(enchant.Scene, {
       aGroup.addChild(aGround);
       
       for (var i = 0; i < max_coin; i++) {
-        new Item(0, Math.round(Math.random() * 2 + 7), secondGroup, this.objectList);
+        var aItem = new Item(0, Math.round(Math.random() * 2 + 7), secondGroup, this.objectList);
+        aItem.enableAction();
       }
       
       aGroup.addEventListener('enterframe', function(){
         for (var i = 0; i < max_coin - itemList.length; i++) {
-          new Item(0, Math.round(Math.random() * 2 + 7), secondGroup, that.objectList);
+          var aItem = new Item(0, Math.round(Math.random() * 2 + 7), secondGroup, that.objectList);
+          aItem.enableAction();
         }
       });
       aGroup.addChild(secondGroup);
@@ -157,25 +160,22 @@ var Title = enchant.Class.create(enchant.Scene, {
         this.objectList = [];
         var itemList = this.objectList['item'] = [];
         var groundList = this.objectList['ground'] = [];
-        var aPlayer = new Player(this.objectList);
-        this.addChild(aPlayer);
-        //  var testPlayer = new Player(300, 100);
-        //  testPlayer.tl.moveTo(300, game.height -128, 45, enchant.Easing.CUBIC_EASEOUT);
         aGroup = new Group();
         this.addChild(aGroup);
         var pause = new Pause();
         this.addChild(pause);
-        aScore = new Score();
-        this.addChild(aScore);
-        aScore.y = -64;
-        aScore.tl.moveTo(aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
-        console.log(aScore.x + " " + aScore.y);
-        aTimer = new Timer();
-        this.addChild(aTimer);
-        var tempy = aTimer.y;
-        console.log(aTimer.y);
-        aTimer.y = -90;
-        aTimer.tl.moveTo(aTimer.x, tempy, game.fps, enchant.Easing.BOUNCE_EASEOUT).delay(game.fps * 0.2).then(function (){this.startCounter();});
+        this.aScore = new Score();
+        this.addChild(this.aScore);
+        this.aScore.y = -64;
+        this.aTimer = new Timer();
+        this.addChild(this.aTimer);
+        this.aTimer.y = -90;
+        this.aPlayer = new Player(this.objectList, this.aScore);
+        this.aPlayer.y = -(this.aPlayer.height);
+        this.addChild(this.aPlayer);
+        //  var testPlayer = new Player(300, 100);
+        //  testPlayer.tl.moveTo(300, game.height -128, 45, enchant.Easing.CUBIC_EASEOUT);
+
         
         //コインを出現させる。
         for (var i = 0; i < NUM_MAX_ITEM; i++) {
@@ -201,20 +201,53 @@ var Title = enchant.Class.create(enchant.Scene, {
               if (itemList.length < NUM_MAX_ITEM) {
                 for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
                     var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, this.objectList);
+                    aCoin.enableAction();
 //                    itemList.push(aCoin);
                   }
                 }
             });
             
+            this.ready();
           },
+          // ゲームが始まる直前のアニメーション
+          // 進捗80%
           ready: function(){
-            
+            var that = this;
+            // 公式の方法だとキーに変数を使用できないのでこの書き方になってる。
+            // この方法だとフレームレートに依存しない動きが可能。
+            // game.fps = 1秒
+            var cue = {};
+            cue[0] = function() {
+              this.aScore.tl.moveTo(this.aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
+              this.aTimer.tl.moveTo(this.aTimer.x, 10, game.fps, enchant.Easing.BOUNCE_EASEOUT);
+              this.aPlayer.tl.delay(game.fps * 0.2).moveTo(this.aPlayer.x, game.height - 128, game.fps * 1.0, enchant.Easing.EXPO_EASEOUT);
+            };
+            cue[game.fps] = function() {
+              this.aPlayer.enableOperation();
+            };
+            cue[game.fps * 2.0] = function() {
+              this.aTimer.startCounter();
+              this.objectList['item'].forEach(function(aItem, i){
+                aItem.enableAction();
+              });
+            };
+            this.tl.cue(cue);
+
+//            this.tl.cue({
+//              0: function() {
+//                this.aScore.tl.moveTo(this.aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
+//                this.aTimer.tl.moveTo(this.aTimer.x, 10, game.fps, enchant.Easing.BOUNCE_EASEOUT).delay(game.fps * 0.2).then(function (){this.startCounter();});                
+//              },
+//              30 : function() {
+//                
+//              }
+//            });
+
           }
       });
       
-      var Player = enchant.Class.create(enchant.Sprite,{
-          
-          initialize: function(objectList) {
+      var Player = enchant.Class.create(enchant.Sprite,{  
+          initialize: function(objectList, aScore) {
             enchant.Sprite.call(this, 64, 64);
             // enchant.jsでは変数を予め宣言する必要は無い。
             // フィールドに値を設定するときはthis.xxxのようにして書く。
@@ -225,6 +258,8 @@ var Title = enchant.Class.create(enchant.Scene, {
             var that = this;
             var SPACE_JUMP = 2;
             var VELOCITY = 9.8;
+            this.aScore = aScore;
+            this.operationEnabled = false;
             this.image = game.assets[IMG_PLAYER];
             this.objectList = objectList;
             this.x = 200;
@@ -249,25 +284,29 @@ var Title = enchant.Class.create(enchant.Scene, {
             var isKeySpacePress = false;
             
               document.addEventListener('keydown', function(e) {
-                switch(e.keyCode) {
+                if (that.operationEnabled == true) {
+                  switch(e.keyCode) {
                   case 32:
-                  isKeySpacePress = true;
-                  that.jump(1);
-                  break;
+                    isKeySpacePress = true;
+                    that.jump(1);
+                    break;
                   case 37: isKeyLeftPress = true; break;
                   case 38: isKeyUpPress = true; break;
                   case 39: isKeyRightPress = true; break;
                   case 40: isKeyDownPress = true; break;
+                  }
                 }
             }, true);
               document.addEventListener('keyup', function(e) {
-                switch(e.keyCode) {
+                if (that.operationEnabled == true) {
+                  switch(e.keyCode) {
                   case 32: isKeySpacePress = false; break;
                   case 37: isKeyLeftPress = false; break;
                   case 38: isKeyUpPress = false; break;
                   case 39: isKeyRightPress = false; break;
                   case 40: isKeyDownPress = false; break;
-                }
+                  }
+                } 
             }, true);
             
               this.addEventListener('enterframe', function() {
@@ -316,9 +355,11 @@ var Title = enchant.Class.create(enchant.Scene, {
                 
                 // アイテムとの衝突判定
                   this.objectList['item'].forEach (function(aItem, i) {
-                    if (that.intersect(aItem)) {
-                      aScore.addPoint(aItem.getPoint());
-                      aItem.remove();
+                    if (that.operationEnabled == true) {
+                      if (that.intersect(aItem)) {
+                        that.aScore.addPoint(aItem.getPoint());
+                        aItem.remove();
+                      }
                     }
                 });
             });
@@ -340,6 +381,12 @@ var Title = enchant.Class.create(enchant.Scene, {
               this.y -= (delta_y - this.olddelta_y);
               this.olddelta_y = delta_y;	
             } 
+          },
+          enableOperation: function() {
+            this.operationEnabled = true;
+          },
+          disableOperation: function() {
+            this.operationEnabled = false;
           }
       });
       
@@ -351,11 +398,11 @@ var Title = enchant.Class.create(enchant.Scene, {
           // id: 落下物の種類 (0:黄色コイン)
           // delta: 1フレーム毎に落下させる量(単位:ピクセル)
           // group: 追加するグループ
-          // spr_width: スプライトの横幅
-          // spr_height: スプライトの縦幅
+          // objectList: アイテムや地面などのリスト
           initialize: function(id, delta, group, objectList) {
             var img_name;
             var that = this;
+            this.actionEnabled = false;
             this.objectList = objectList;
             this.group = group;
             this.point = 0;
@@ -370,15 +417,16 @@ var Title = enchant.Class.create(enchant.Scene, {
             this.x = Math.round(Math.random() * (game.width - this.width));
             this.y = -1 * Math.round(Math.random() * 200);
             // フレーム毎の処理
-            this.addEventListener
-              ("enterframe", function() {
+            this.addEventListener("enterframe", function() {
+              if (that.actionEnabled == true) {
                 this.y += delta;
-                // 地面との衝突判定
-                  that.objectList['ground'].forEach (function(aGround, i) {
-                    if (that.intersect(aGround)) {
-                      that.remove();
-                    }
-                });
+              }
+              // 地面との衝突判定
+              that.objectList['ground'].forEach (function(aGround, i) {
+                if (that.intersect(aGround)) {
+                  that.remove();
+                }
+              });
             });
             this.objectList['item'].push(this);
             group.addChild(this);
@@ -399,6 +447,14 @@ var Title = enchant.Class.create(enchant.Scene, {
                 }
             });
             delete this;
+          },
+          
+          enableAction: function() {
+            this.actionEnabled = true;
+          },
+          
+          disableAction: function() {
+            this.actionEnabled = false;
           }
       });
       
