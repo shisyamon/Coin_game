@@ -19,11 +19,12 @@ var IMG_TIMER_NUM_MINI = 'res/timer_num_mini.png';
 var IMG_TITLE = 'res/title.png';
 var IMG_STARTBUTTON = 'res/start.png';
 var IMG_KEY_INFO = 'res/info_key.png';
-var FPS = 60;
+var IMG_INFORM = 'res/period.png';
+var FPS = 30;
 var GAME_SPEED = 1;
 var KEY_JUMP = 32;
 var NUM_MAX_ITEM = 30;
-var GAME_TIMER = 30; // タイマーはfps依存
+var GAME_TIMER = 5.0;
 var GRAVITY = 9.8;
 var aScore;
 var aTimer;
@@ -64,25 +65,35 @@ window.onload = function(){
     IMG_TIMER_NUM_MINI,
     IMG_TITLE,
     IMG_STARTBUTTON,
-  IMG_KEY_INFO]);
+    IMG_KEY_INFO,
+    IMG_INFORM]);
   
   
   game.onload = function() {
-    
-    var aTitle = new Title();
-      aTitle.addEventListener("gamestart", function () {
-        Game();
-    });
-    // 大幅変更前
-    
+    var score = this.score = {};
+    score['last1P'] = 0;
+    score['last2P'] = 0;
+    score['rank1P'] = [];
+    score['rank2P'] = [];
+    this.gameLaunch();
     // 操作キャラのフレーム毎の処理
     // TODO: spriteクラスを継承してplayerクラスを作り、フィールドを定義したり自作メソッドが呼び出せるようにする。
+  }
+  game.gameLaunch = function() {
+    var aTitle = new Title();
+    game.pushScene(aTitle);
+    aTitle.addEventListener('gamestart', function(){
+      console.log("aaa");
+      game.popScene();
+      game.pushScene(new Game());
+    });
   }
   game.start();
 };
 
 var Title = enchant.Class.create(enchant.Scene, {
     initialize: function() {
+      console.log("aaa")
       var that = this;
       enchant.Scene.call(this);
       var demoGroup = new Group();
@@ -110,12 +121,10 @@ var Title = enchant.Class.create(enchant.Scene, {
         textGroup.addChild(keyinfoSprite);
         this.backgroundColor = "#FFFFFF";
           startbuttonSprite.addEventListener('touchstart', function(){
-            game.popScene();
-            delete that;
+            console.log("aaaaa");
             var e = new enchant.Event("gamestart");
             that.dispatchEvent(e);
         });
-        game.pushScene(this);
       },
     // タイトル画面の裏で動くデモアニメーション
     demo: function(aGroup){
@@ -161,6 +170,7 @@ var Title = enchant.Class.create(enchant.Scene, {
         var that = this;
         enchant.Scene.call(this);
         game.pushScene(this);
+        this.imgInform = game.assets[IMG_INFORM];
         this.objectList = [];
         var itemList = this.objectList['item'] = [];
         var groundList = this.objectList['ground'] = [];
@@ -169,6 +179,7 @@ var Title = enchant.Class.create(enchant.Scene, {
         var pause = new Pause();
         this.addChild(pause);
         this.aScore = new Score();
+        console.log(this.aScore.score);
         this.addChild(this.aScore);
         this.aScore.y = -64;
         this.aTimer = new Timer();
@@ -211,11 +222,25 @@ var Title = enchant.Class.create(enchant.Scene, {
                 }
             });
             
+            this.aTimer.addEventListener('timeup', function(){
+//              game.popScene();
+//              console.log("dettteiu");
+              var debug = true;
+              if (debug == true) {
+                that.timeUp(); 
+              }
+            });
+            
             this.ready();
           },
           // ゲームが始まる直前のアニメーション
           // 進捗80%
           ready: function(){
+            var imgReady = new Sprite(this.imgInform.width, this.imgInform.height / 3);
+            imgReady.image = this.imgInform;
+            this.addChild(imgReady);
+            imgReady.x = (game.width - imgReady.width) / 2;
+            imgReady.y = -(imgReady.height);
             var that = this;
             // 公式の方法だとキーに変数を使用できないのでこの書き方になってる。
             // この方法だとフレームレートに依存しない動きが可能。
@@ -224,13 +249,16 @@ var Title = enchant.Class.create(enchant.Scene, {
             cue[0] = function() {
               this.aScore.tl.moveTo(this.aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
               this.aTimer.tl.moveTo(this.aTimer.x, 10, game.fps, enchant.Easing.BOUNCE_EASEOUT);
-              this.aPlayer.tl.delay(game.fps * 0.2).moveTo(this.aPlayer.x, game.height - 128, game.fps * 1.0, enchant.Easing.EXPO_EASEOUT);
+              this.aPlayer.tl.delay(game.fps * 0.2).moveTo(this.aPlayer.x, game.height - 128, game.fps * 1.5, enchant.Easing.EXPO_EASEOUT);
+              imgReady.tl.moveTo(imgReady.x, (game.height - imgReady.height) / 2 - 20 , game.fps * 0.2, enchant.Easing.LINEAR).moveBy(0, 20 , game.fps * 1.8, enchant.Easing.LINEAR).and().fadeOut(game.fps * 1.8, enchant.Easing.QUAD_EASEIN);
             };
             cue[game.fps] = function() {
               this.aPlayer.enableOperation();
             };
             cue[game.fps * 2.0] = function() {
-              this.aTimer.startCounter();
+              imgReady.frame = 1;
+              imgReady.tl.show().delay(game.fps * 0.2).moveTo(imgReady.x, -imgReady.y, game.fps * 1.0, enchant.Easing.BACK_EASEINOUT);
+              this.aTimer.startTimer();
               this.objectList['item'].forEach(function(aItem, i){
                 aItem.enableAction();
               });
@@ -247,6 +275,45 @@ var Title = enchant.Class.create(enchant.Scene, {
 //              }
 //            });
 
+          },
+          
+          timeUp: function() {
+            var that = this;
+            var imgTimeUp = new Sprite(this.imgInform.width, this.imgInform.height / 3);
+            var aEntity = new Entity();
+            game.score['last1P'] = this.aScore.getScore();
+            game.score['rank1P'].push(this.aScore.getScore());
+            game.score['rank1P'].sort(
+                function (a, b) {
+                  if( a < b ) return -1;
+                  if( a > b ) return 1;
+                  return 0;
+                }
+            )
+            game.score['rank1P'].forEach(function(aScore, i){
+              console.log(i+1 + ": " + aScore);
+            });
+            aEntity.opacity = 0;
+            aEntity.width = game.width;
+            aEntity.height = game.height;
+            aEntity.backgroundColor = "#EFEFEF";
+            imgTimeUp.image = game.assets[IMG_INFORM];
+            imgTimeUp.frame = 2;
+            imgTimeUp.x = (game.width - imgTimeUp.width) / 2;
+            imgTimeUp.y = -imgTimeUp.height;
+            this.addChild(imgTimeUp);
+            this.addChild(aEntity);
+            imgTimeUp.tl.moveTo(imgTimeUp.x, (game.height - imgTimeUp.height) / 2, game.fps * 1.0, enchant.Easing.ELASTIC_EASEOUT);
+            aEntity.tl.delay(game.fps * 1.5).fadeIn(game.fps).then(function(){
+              var aResult = new Result(that);
+              game.popScene();
+              game.pushScene(aResult);
+            });
+            this.aTimer.stopTimer();
+            this.objectList['item'].forEach(function(aItem, i){
+              aItem.disableAction();
+            });
+            this.aPlayer.disableOperation();
           }
       });
       
@@ -489,7 +556,7 @@ var Title = enchant.Class.create(enchant.Scene, {
               this.addChild(aDigit);
             }
             
-            game.addEventListener
+            this.addEventListener
               ("enterframe", function() {
                 if (that.countEnabled == true) {
                   that.framecount++;
@@ -504,7 +571,9 @@ var Title = enchant.Class.create(enchant.Scene, {
                 var msecAry = String(msec).split("");
                 
                 if (last < 0) {
-                  that.framecount = 0;
+                    var e = new enchant.Event('timeup');
+                    that.dispatchEvent(e);
+                    that.framecount = GAME_TIMER * game.fps;
                 }
                 for (var i = 0; i < 4; i++) {
                   if (i < 2) {
@@ -515,10 +584,10 @@ var Title = enchant.Class.create(enchant.Scene, {
                 }
             });
           },
-          startCounter: function(){
+          startTimer: function(){
             this.countEnabled = true;
           },
-          stopCounter: function() {
+          stopTimer: function() {
             this.countEnabled = false;
           }
       });
@@ -584,6 +653,9 @@ var Title = enchant.Class.create(enchant.Scene, {
           
           addPoint: function(point) {
             this.score += point;
+          },
+          getScore: function() {
+            return this.score;
           }
       });
       
@@ -609,4 +681,36 @@ var Title = enchant.Class.create(enchant.Scene, {
                 }
             });
           }
+      });
+      
+      var Result = enchant.Class.create(enchant.Scene, {
+        initialize: function(gamemain) {
+          enchant.Scene.call(this);
+          var that = this;
+          var gamemode = 1;
+//          this.aGame = gamemain;
+          var aEntity = new Entity();
+          aEntity.backgroundColor = "#FFFFFF";
+          aEntity.width = game.width;
+          aEntity.height = game.height;
+          this.addChild(aEntity);
+          var aGroup = new Group();
+          this.addChild(aGroup);
+          if (gamemode == 1) {
+            var restartEntity = new Entity();
+            restartEntity.x = (200 + Math.random() * 50);
+            restartEntity.y = 400;
+            restartEntity.width = 40;
+            restartEntity.height = 40;
+            restartEntity.touchEnabled = "enable";
+            restartEntity.backgroundColor = "#ffa500";
+            this.addChild(restartEntity);
+            restartEntity.addEventListener("touchstart", function(){
+//              game.removeScene(that.aGame);
+              game.popScene();
+              game.gameLaunch();
+            });
+          }
+          
+        }
       });
