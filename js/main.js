@@ -20,7 +20,7 @@ var IMG_TITLE = 'res/title.png';
 var IMG_STARTBUTTON = 'res/start.png';
 var IMG_KEY_INFO = 'res/info_key.png';
 var IMG_INFORM = 'res/period.png';
-var FPS = 30;
+var FPS = 60;
 var GAME_SPEED = 1;
 var KEY_JUMP = 32;
 var NUM_MAX_ITEM = 30;
@@ -70,15 +70,15 @@ window.onload = function(){
   
   
   game.onload = function() {
+    // スコア管理用
     var score = this.score = {};
     score['last1P'] = 0;
     score['last2P'] = 0;
     score['rank1P'] = [];
     score['rank2P'] = [];
     this.gameLaunch();
-    // 操作キャラのフレーム毎の処理
-    // TODO: spriteクラスを継承してplayerクラスを作り、フィールドを定義したり自作メソッドが呼び出せるようにする。
-  }
+  };
+  // ゲーム実行。タイトル画面へ。
   game.gameLaunch = function() {
     var aTitle = new Title();
     game.pushScene(aTitle);
@@ -87,59 +87,81 @@ window.onload = function(){
       game.popScene();
       game.pushScene(new Game());
     });
-  }
+  };
+  
   game.start();
 };
 
+// enchant.jsのSceneクラスを継承したTitleクラス。
+// ここにタイトルに表示するものを書く。
+// 進捗 70%くらい
 var Title = enchant.Class.create(enchant.Scene, {
     initialize: function() {
-      console.log("aaa")
-      var that = this;
       enchant.Scene.call(this);
+      this.backgroundColor = "#FFFFFF";
+      
+      var that = this;
+      var titlePic = game.assets[IMG_TITLE];
+      var startbuttonPic = game.assets[IMG_STARTBUTTON];
+      var keyinfoPic = game.assets[IMG_KEY_INFO];
+      
       var demoGroup = new Group();
       this.addChild(demoGroup);
       this.demo(demoGroup);
       var textGroup = new Group();
       this.addChild(textGroup);
-      var titlePic = game.assets[IMG_TITLE];
-      var startbuttonPic = game.assets[IMG_STARTBUTTON];
-      var keyinfoPic = game.assets[IMG_KEY_INFO];
+
       var titleSprite = new Sprite(titlePic.width, titlePic.height);
       titleSprite.image = titlePic;
       titleSprite.x = (game.width - titleSprite.width) / 2;
       titleSprite.y = 80; 
       textGroup.addChild(titleSprite);
+      
       var startbuttonSprite = new Sprite(startbuttonPic.width, startbuttonPic.height);
-        startbuttonSprite.image = startbuttonPic;
-        startbuttonSprite.x = (game.width - startbuttonSprite.width) / 2;
-        startbuttonSprite.y = 350;
-        textGroup.addChild(startbuttonSprite);
-        var keyinfoSprite = new Sprite(keyinfoPic.width, keyinfoPic.height);
-        keyinfoSprite.image = keyinfoPic;
-        keyinfoSprite.x = (game.width - keyinfoSprite.width) / 2;
-        keyinfoSprite.y = 540;
-        textGroup.addChild(keyinfoSprite);
-        this.backgroundColor = "#FFFFFF";
-          startbuttonSprite.addEventListener('touchstart', function(){
-            console.log("aaaaa");
-            var e = new enchant.Event("gamestart");
-            that.dispatchEvent(e);
-        });
+      startbuttonSprite.image = startbuttonPic;
+      startbuttonSprite.x = (game.width - startbuttonSprite.width) / 2;
+      startbuttonSprite.y = 350;
+      textGroup.addChild(startbuttonSprite);
+      
+      var keyinfoSprite = new Sprite(keyinfoPic.width, keyinfoPic.height);
+      keyinfoSprite.image = keyinfoPic;
+      keyinfoSprite.x = (game.width - keyinfoSprite.width) / 2;
+      keyinfoSprite.y = 540;
+      textGroup.addChild(keyinfoSprite);
+      
+      startbuttonSprite.addEventListener('touchstart', function(){
+        var e = new enchant.Event("gamestart");
+        that.dispatchEvent(e);
+      });
       },
+      
     // タイトル画面の裏で動くデモアニメーション
+    // 進捗 90%くらい
     demo: function(aGroup){
       var max_coin = 30;
       var that = this;
       var secondGroup = new Group();
+      aGroup.addChild(secondGroup);
+      
       this.objectList = [];
       var groundList = this.objectList['ground'] = [];
       var itemList = this.objectList['item'] = [];
+      
       var aGround = new Sprite(game.width, 64);
       aGround.image = game.assets[IMG_GROUND];
       aGround.x = 0;
       aGround.y = game.height - aGround.height;
       groundList.push(aGround);
       aGroup.addChild(aGround);
+      
+      var aLayer = new Entity();
+      aLayer.backgroundColor = "#FFFFFF";
+      aLayer.width = game.width;
+      aLayer.height = game.height;
+      aLayer.x = 0;
+      aLayer.y = 0;
+      aLayer.opacity = 0.6;
+      aGroup.addChild(aLayer);
       
       for (var i = 0; i < max_coin; i++) {
         var aItem = new Item(0, Math.round(Math.random() * 2 + 7), secondGroup, this.objectList);
@@ -152,170 +174,179 @@ var Title = enchant.Class.create(enchant.Scene, {
           aItem.enableAction();
         }
       });
-      aGroup.addChild(secondGroup);
-      var aLayer = new Entity();
-      aLayer.backgroundColor = "#FFFFFF";
-      aLayer.width = game.width;
-      aLayer.height = game.height;
-      aLayer.x = 0;
-      aLayer.y = 0;
-      aLayer.opacity = 0.6;
-      aGroup.addChild(aLayer);
-     
     }
   });
   
   var Game = enchant.Class.create(enchant.Scene, {
       initialize: function() {
-        var that = this;
         enchant.Scene.call(this);
         game.pushScene(this);
         this.imgInform = game.assets[IMG_INFORM];
+        var that = this;
+        
         this.objectList = [];
         var itemList = this.objectList['item'] = [];
         var groundList = this.objectList['ground'] = [];
         aGroup = new Group();
         this.addChild(aGroup);
+        
         var pause = new Pause();
         this.addChild(pause);
+        
         this.aScore = new Score();
-        console.log(this.aScore.score);
-        this.addChild(this.aScore);
+//        console.log(this.aScore.score);
         this.aScore.y = -64;
+        this.addChild(this.aScore);
+        
         this.aTimer = new Timer();
-        this.addChild(this.aTimer);
         this.aTimer.y = -90;
+        this.addChild(this.aTimer);
+        
         this.aPlayer = new Player(this.objectList, this.aScore);
         this.aPlayer.y = -(this.aPlayer.height);
         this.addChild(this.aPlayer);
+        
         //  var testPlayer = new Player(300, 100);
         //  testPlayer.tl.moveTo(300, game.height -128, 45, enchant.Easing.CUBIC_EASEOUT);
-
         
         //コインを出現させる。
         for (var i = 0; i < NUM_MAX_ITEM; i++) {
           var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, this.objectList);
         }
           
-          // 地面を敷き詰める。
-          for (var x = 0; x < game.width; x += game.width) {
-            var ground = new Sprite(game.width, 64);
-            ground.image = game.assets[IMG_GROUND];
-            ground.x = x;
-            ground.y = game.height - 64;
-            
-            // 衝突判定のために配列に保存する。
-            // 衝突させる物体(コイン、アイテムなど)が増えるにつれ重くなるので1枚のデカいテクスチャに変える可能性アリ
-            groundList.push(ground);
-            
-            // 画面に出す。
-            this.addChild(ground);
-          }
-          
-            this.addEventListener("enterframe", function(){
-              if (itemList.length < NUM_MAX_ITEM) {
-                for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
-                    var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, this.objectList);
-                    aCoin.enableAction();
-//                    itemList.push(aCoin);
-                  }
-                }
-            });
-            
-            this.aTimer.addEventListener('timeup', function(){
-//              game.popScene();
-//              console.log("dettteiu");
-              var debug = true;
-              if (debug == true) {
-                that.timeUp(); 
-              }
-            });
-            
-            this.ready();
-          },
-          // ゲームが始まる直前のアニメーション
-          // 進捗80%
-          ready: function(){
-            var imgReady = new Sprite(this.imgInform.width, this.imgInform.height / 3);
-            imgReady.image = this.imgInform;
-            this.addChild(imgReady);
-            imgReady.x = (game.width - imgReady.width) / 2;
-            imgReady.y = -(imgReady.height);
-            var that = this;
-            // 公式の方法だとキーに変数を使用できないのでこの書き方になってる。
-            // この方法だとフレームレートに依存しない動きが可能。
-            // game.fps = 1秒
-            var cue = {};
-            cue[0] = function() {
-              this.aScore.tl.moveTo(this.aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
-              this.aTimer.tl.moveTo(this.aTimer.x, 10, game.fps, enchant.Easing.BOUNCE_EASEOUT);
-              this.aPlayer.tl.delay(game.fps * 0.2).moveTo(this.aPlayer.x, game.height - 128, game.fps * 1.5, enchant.Easing.EXPO_EASEOUT);
-              imgReady.tl.moveTo(imgReady.x, (game.height - imgReady.height) / 2 - 20 , game.fps * 0.2, enchant.Easing.LINEAR).moveBy(0, 20 , game.fps * 1.8, enchant.Easing.LINEAR).and().fadeOut(game.fps * 1.8, enchant.Easing.QUAD_EASEIN);
-            };
-            cue[game.fps] = function() {
-              this.aPlayer.enableOperation();
-            };
-            cue[game.fps * 2.0] = function() {
-              imgReady.frame = 1;
-              imgReady.tl.show().delay(game.fps * 0.2).moveTo(imgReady.x, -imgReady.y, game.fps * 1.0, enchant.Easing.BACK_EASEINOUT);
-              this.aTimer.startTimer();
-              this.objectList['item'].forEach(function(aItem, i){
-                aItem.enableAction();
-              });
-            };
-            this.tl.cue(cue);
+        // 地面を敷き詰める。
+        for (var x = 0; x < game.width; x += game.width) {
+          var ground = new Sprite(game.width, 64);
+          ground.image = game.assets[IMG_GROUND];
+          ground.x = x;
+          ground.y = game.height - 64;
 
-//            this.tl.cue({
-//              0: function() {
-//                this.aScore.tl.moveTo(this.aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
-//                this.aTimer.tl.moveTo(this.aTimer.x, 10, game.fps, enchant.Easing.BOUNCE_EASEOUT).delay(game.fps * 0.2).then(function (){this.startCounter();});                
-//              },
-//              30 : function() {
-//                
-//              }
-//            });
+          // 衝突判定のために配列に保存する。
+          // 衝突させる物体(コイン、アイテムなど)が増えるにつれ重くなるので1枚のデカいテクスチャに変える可能性アリ
+          groundList.push(ground);
 
-          },
+          // 画面に出す。
+          this.addChild(ground);
+        }
           
-          timeUp: function() {
-            var that = this;
-            var imgTimeUp = new Sprite(this.imgInform.width, this.imgInform.height / 3);
-            var aEntity = new Entity();
-            game.score['last1P'] = this.aScore.getScore();
-            game.score['rank1P'].push(this.aScore.getScore());
-            game.score['rank1P'].sort(
-                function (a, b) {
-                  if( a < b ) return -1;
-                  if( a > b ) return 1;
-                  return 0;
-                }
-            )
-            game.score['rank1P'].forEach(function(aScore, i){
-              console.log(i+1 + ": " + aScore);
-            });
-            aEntity.opacity = 0;
-            aEntity.width = game.width;
-            aEntity.height = game.height;
-            aEntity.backgroundColor = "#EFEFEF";
-            imgTimeUp.image = game.assets[IMG_INFORM];
-            imgTimeUp.frame = 2;
-            imgTimeUp.x = (game.width - imgTimeUp.width) / 2;
-            imgTimeUp.y = -imgTimeUp.height;
-            this.addChild(imgTimeUp);
-            this.addChild(aEntity);
-            imgTimeUp.tl.moveTo(imgTimeUp.x, (game.height - imgTimeUp.height) / 2, game.fps * 1.0, enchant.Easing.ELASTIC_EASEOUT);
-            aEntity.tl.delay(game.fps * 1.5).fadeIn(game.fps).then(function(){
-              var aResult = new Result(that);
-              game.popScene();
-              game.pushScene(aResult);
-            });
-            this.aTimer.stopTimer();
-            this.objectList['item'].forEach(function(aItem, i){
-              aItem.disableAction();
-            });
-            this.aPlayer.disableOperation();
+        this.addEventListener("enterframe", function(){
+          if (itemList.length < NUM_MAX_ITEM) {
+            for (var i = 0; i < NUM_MAX_ITEM - itemList.length; i++) {
+              var aCoin = new Item(0, Math.round(Math.random() * 2 + 7), aGroup, this.objectList);
+              aCoin.enableAction();
+//            itemList.push(aCoin);
+            }
           }
-      });
+        });
+            
+        this.aTimer.addEventListener('timeup', function(){
+//        game.popScene();
+//        console.log("dettteiu");
+          var debug = true;
+          if (debug == true) {
+            that.timeUp(); 
+          }
+        });
+
+        this.ready();
+      },
+      
+      // ゲームが始まる直前のアニメーション
+      // 進捗80%
+      ready: function(){
+        var that = this;
+        var imgReady = new Sprite(this.imgInform.width, this.imgInform.height / 3);
+        imgReady.image = this.imgInform;
+        imgReady.x = (game.width - imgReady.width) / 2;
+        imgReady.y = -(imgReady.height);
+        this.addChild(imgReady);
+
+        // 公式の方法だとキーに変数を使用できないのでこの書き方になってる。
+        // この方法だとフレームレートに依存しない動きが可能。
+        // game.fps = 1秒
+        var cue = {};
+        cue[0] = function() {
+          this.aScore.tl.moveTo(this.aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
+          this.aTimer.tl.moveTo(this.aTimer.x, 10, game.fps, enchant.Easing.BOUNCE_EASEOUT);
+          this.aPlayer.tl.delay(game.fps * 0.2).moveTo(this.aPlayer.x, game.height - 128, game.fps * 1.5, enchant.Easing.EXPO_EASEOUT);
+          imgReady.tl.moveTo(imgReady.x, (game.height - imgReady.height) / 2 - 20 , game.fps * 0.2, enchant.Easing.LINEAR).moveBy(0, 20 , game.fps * 1.8, enchant.Easing.LINEAR).and().fadeOut(game.fps * 1.8, enchant.Easing.QUAD_EASEIN);
+        };
+        cue[game.fps] = function() {
+          this.aPlayer.enableOperation();
+        };
+        cue[game.fps * 2.0] = function() {
+          imgReady.frame = 1;
+          imgReady.tl.show().delay(game.fps * 0.2).moveTo(imgReady.x, -imgReady.y, game.fps * 1.0, enchant.Easing.BACK_EASEINOUT);
+          this.aTimer.startTimer();
+          this.objectList['item'].forEach(function(aItem, i){
+            aItem.enableAction();
+          });
+        };
+        this.tl.cue(cue);
+
+//      this.tl.cue({
+//      0: function() {
+//      this.aScore.tl.moveTo(this.aScore.x, 20, game.fps, enchant.Easing.CUBIC_EASEOUT);
+//      this.aTimer.tl.moveTo(this.aTimer.x, 10, game.fps, enchant.Easing.BOUNCE_EASEOUT).delay(game.fps * 0.2).then(function (){this.startCounter();});                
+//      },
+//      30 : function() {
+
+//      }
+//      });
+
+      },
+          
+      // タイムアップ時のアニメーション
+      // 進捗60%
+      timeUp: function() {
+        var that = this;
+        var imgTimeUp = new Sprite(this.imgInform.width, this.imgInform.height / 3);
+        var aEntity = new Entity();
+        
+        // スコア管理。要変更。
+        game.score['last1P'] = this.aScore.getScore();
+        game.score['rank1P'].push(this.aScore.getScore());
+        game.score['rank1P'].sort(
+            function (a, b) {
+              if( a < b ) return -1;
+              if( a > b ) return 1;
+              return 0;
+            }
+        )
+        game.score['rank1P'].forEach(function(aScore, i){
+          console.log(i+1 + ": " + aScore);
+        });
+        
+        // タイムアップ文字
+        imgTimeUp.image = game.assets[IMG_INFORM];
+        imgTimeUp.frame = 2;
+        imgTimeUp.x = (game.width - imgTimeUp.width) / 2;
+        imgTimeUp.y = -imgTimeUp.height;
+        this.addChild(imgTimeUp);
+        
+        // フェードアウト用の白の一枚絵
+        aEntity.opacity = 0;
+        aEntity.width = game.width;
+        aEntity.height = game.height;
+        aEntity.backgroundColor = "#FFFFFF";
+        this.addChild(aEntity);
+        
+        // アニメーション定義。cueでまとめたほうが良いかも
+        imgTimeUp.tl.moveTo(imgTimeUp.x, (game.height - imgTimeUp.height) / 2, game.fps * 1.0, enchant.Easing.ELASTIC_EASEOUT);
+        aEntity.tl.delay(game.fps * 1.5).fadeIn(game.fps).then(function(){
+          var aResult = new Result(that);
+          game.popScene();
+          game.pushScene(aResult);
+        });
+        
+        // オブジェクト動作制御
+        this.aTimer.stopTimer();
+        this.objectList['item'].forEach(function(aItem, i){
+          aItem.disableAction();
+        });
+        this.aPlayer.disableOperation();
+      }
+  });
       
       var Player = enchant.Class.create(enchant.Sprite,{  
           initialize: function(objectList, aScore) {
@@ -712,5 +743,32 @@ var Title = enchant.Class.create(enchant.Scene, {
             });
           }
           
+        }
+      });
+      
+      var Ranking = enchant.Class.create({
+        initialize: function() {
+          var score = this.score = {};
+          score['last1p'] = 0;
+          score['last2p'] = 0;
+          score['rank1p'] = [];
+          score['rank2p'] = [];
+        },
+        
+        setLastScore: function(mode, aScore) { 
+          if (aScore > 0) {
+            this.score[mode] = aScore;
+          }
+        },
+        
+        addScoreToRanking: function(mode, aScore) {
+          var aRanking = this.score[mode];
+          aRanking.push(aScore);
+          aRanking.sort(
+              function (a, b) {
+                if( a < b ) return -1;
+                if( a > b ) return 1;
+                return 0;
+              });
         }
       });
