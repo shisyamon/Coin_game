@@ -10,6 +10,7 @@
  */
 enchant();
 
+var img_path = {};
 var IMG_GROUND = 'res/ground_test.png';
 var IMG_PLAYER = 'res/chara1_4x.png';
 var IMG_COIN_YELLOW = 'res/coin_yellow.png';
@@ -20,10 +21,14 @@ var IMG_TITLE = 'res/title.png';
 var IMG_STARTBUTTON = 'res/start.png';
 var IMG_KEY_INFO = 'res/info_key.png';
 var IMG_INFORM = 'res/period.png';
-var FPS = 60;
+var IMG_RESULT_TXT = 'res/result_1.png';
+var IMG_RESULT_PT = 'res/pts.png';
+
+var RANKING_LENGTH = 10;
+var FPS = 30;
 var GAME_SPEED = 1;
 var KEY_JUMP = 32;
-var NUM_MAX_ITEM = 30;
+var NUM_MAX_ITEM = 10;
 var GAME_TIMER = 5.0;
 var GRAVITY = 9.8;
 var aScore;
@@ -66,16 +71,15 @@ window.onload = function(){
     IMG_TITLE,
     IMG_STARTBUTTON,
     IMG_KEY_INFO,
-    IMG_INFORM]);
+    IMG_INFORM,
+    IMG_RESULT_TXT,
+    IMG_RESULT_PT]);
   
   
   game.onload = function() {
     // スコア管理用
-    var score = this.score = {};
-    score['last1P'] = 0;
-    score['last2P'] = 0;
-    score['rank1P'] = [];
-    score['rank2P'] = [];
+    //var score = this.score = {};
+    this.score2 = new Ranking();
     this.gameLaunch();
   };
   // ゲーム実行。タイトル画面へ。
@@ -303,19 +307,9 @@ var Title = enchant.Class.create(enchant.Scene, {
         var imgTimeUp = new Sprite(this.imgInform.width, this.imgInform.height / 3);
         var aEntity = new Entity();
         
-        // スコア管理。要変更。
-        game.score['last1P'] = this.aScore.getScore();
-        game.score['rank1P'].push(this.aScore.getScore());
-        game.score['rank1P'].sort(
-            function (a, b) {
-              if( a < b ) return -1;
-              if( a > b ) return 1;
-              return 0;
-            }
-        )
-        game.score['rank1P'].forEach(function(aScore, i){
-          console.log(i+1 + ": " + aScore);
-        });
+        // スコア管理。
+        game.score2.setLastScore('last1p', this.aScore.getScore());
+        game.score2.addScoreToRanking('rank1p', this.aScore.getScore());
         
         // タイムアップ文字
         imgTimeUp.image = game.assets[IMG_INFORM];
@@ -755,20 +749,41 @@ var Title = enchant.Class.create(enchant.Scene, {
           score['rank2p'] = [];
         },
         
-        setLastScore: function(mode, aScore) { 
+        setLastScore: function(mode, aScore) {
+          if(!(mode in this.score)) {
+            console.log("aaab");
+            return;
+          }
           if (aScore > 0) {
             this.score[mode] = aScore;
           }
         },
         
         addScoreToRanking: function(mode, aScore) {
+          if(!(mode in this.score)) {
+            console.log("aaabc");
+            return;
+          }
           var aRanking = this.score[mode];
           aRanking.push(aScore);
           aRanking.sort(
               function (a, b) {
-                if( a < b ) return -1;
-                if( a > b ) return 1;
+                if( a > b ) return -1;
+                if( a < b ) return 1;
                 return 0;
               });
+          var ct = aRanking.length - RANKING_LENGTH;
+          for (var i = 0; i < ct; i++) {
+            aRanking.pop();
+          }
+          
+          aRanking.forEach(function(x, i){
+            console.log(x);
+          });
+//          if (aRanking.length - RANKING_LENGTH > 0) {
+//            for (var i = 0; i < aRanking.length - RANKING_LENGTH; i++) {
+//              aRanking.pop();
+//            }
+//          }
         }
       });
