@@ -10,19 +10,28 @@
  */
 enchant();
 
-var img_path = {};
-var IMG_GROUND = 'res/ground_test.png';
-var IMG_PLAYER = 'res/chara1_4x.png';
-var IMG_COIN_YELLOW = 'res/coin_yellow.png';
-var IMG_SCORE_NUM = 'res/score_num_thin.png';
-var IMG_TIMER_NUM = 'res/timer_num.png';
-var IMG_TIMER_NUM_MINI = 'res/timer_num_mini.png';
-var IMG_TITLE = 'res/title.png';
-var IMG_STARTBUTTON = 'res/start.png';
-var IMG_KEY_INFO = 'res/info_key.png';
-var IMG_INFORM = 'res/period.png';
-var IMG_RESULT_TXT = 'res/result_1.png';
-var IMG_RESULT_PT = 'res/pts.png';
+var gameImages = [];
+gameImages.addImage = function(aFilePath){
+  if(!aFilePath) {
+    return 'null';
+  }
+  this[this.length] = aFilePath;
+  return aFilePath;
+};
+var IMG_GROUND          = gameImages.addImage('res/ground_test.png');
+var IMG_PLAYER          = gameImages.addImage('res/chara1_4x.png');
+var IMG_COIN_YELLOW     = gameImages.addImage('res/coin_yellow.png');
+var IMG_SCORE_NUM       = gameImages.addImage('res/score_num_thin.png');
+var IMG_TIMER_NUM       = gameImages.addImage('res/timer_num.png');
+var IMG_TIMER_NUM_MINI  = gameImages.addImage('res/timer_num_mini.png');
+var IMG_TITLE           = gameImages.addImage('res/title.png');
+var IMG_STARTBUTTON     = gameImages.addImage('res/start.png');
+var IMG_KEY_INFO        = gameImages.addImage('res/info_key.png');
+var IMG_INFORM          = gameImages.addImage('res/period.png');
+var IMG_RESULT_TXT      = gameImages.addImage('res/result_1.png');
+var IMG_RESULT_PT       = gameImages.addImage('res/pts.png');
+var IMG_RETURNTOTITLE   = gameImages.addImage('res/rett_txt.png');
+var IMG_RANKING         = gameImages.addImage('res/rank_txt.png');
 
 var RANKING_LENGTH = 10;
 var FPS = 30;
@@ -62,18 +71,22 @@ window.onload = function(){
   
   // 画像のロード
   // プログラムで使う画像は全てここで読み込む
-  game.preload([IMG_GROUND,
-    IMG_PLAYER,
-    IMG_COIN_YELLOW,
-    IMG_SCORE_NUM,
-    IMG_TIMER_NUM,
-    IMG_TIMER_NUM_MINI,
-    IMG_TITLE,
-    IMG_STARTBUTTON,
-    IMG_KEY_INFO,
-    IMG_INFORM,
-    IMG_RESULT_TXT,
-    IMG_RESULT_PT]);
+//  game.preload([IMG_GROUND,
+//    IMG_PLAYER,
+//    IMG_COIN_YELLOW,
+//    IMG_SCORE_NUM,
+//    IMG_TIMER_NUM,
+//    IMG_TIMER_NUM_MINI,
+//    IMG_TITLE,
+//    IMG_STARTBUTTON,
+//    IMG_KEY_INFO,
+//    IMG_INFORM,
+//    IMG_RESULT_TXT,
+//    IMG_RESULT_PT,
+//    IMG_RETURNTOTITLE,
+//    IMG_RANKING
+//    ]);
+  game.preload(gameImages);
   
   
   game.onload = function() {
@@ -772,6 +785,8 @@ var Title = enchant.Class.create(enchant.Scene, {
                 if( a < b ) return 1;
                 return 0;
               });
+          
+          
           var ct = aRanking.length - RANKING_LENGTH;
           for (var i = 0; i < ct; i++) {
             aRanking.pop();
@@ -780,10 +795,5 @@ var Title = enchant.Class.create(enchant.Scene, {
           aRanking.forEach(function(x, i){
             console.log(x);
           });
-//          if (aRanking.length - RANKING_LENGTH > 0) {
-//            for (var i = 0; i < aRanking.length - RANKING_LENGTH; i++) {
-//              aRanking.pop();
-//            }
-//          }
         }
       });
