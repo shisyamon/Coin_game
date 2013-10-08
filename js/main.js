@@ -22,6 +22,7 @@ var IMG_GROUND          = gameImages.addImage('res/ground_test.png');
 var IMG_PLAYER          = gameImages.addImage('res/chara1_4x.png');
 var IMG_COIN_YELLOW     = gameImages.addImage('res/coin_yellow.png');
 var IMG_SCORE_NUM       = gameImages.addImage('res/score_num_thin.png');
+var IMG_SCORE_NUM_BIG   = gameImages.addImage('res/score_num_big.png');
 var IMG_TIMER_NUM       = gameImages.addImage('res/timer_num.png');
 var IMG_TIMER_NUM_MINI  = gameImages.addImage('res/timer_num_mini.png');
 var IMG_TITLE           = gameImages.addImage('res/title.png');
@@ -38,7 +39,7 @@ var FPS = 30;
 var GAME_SPEED = 1;
 var KEY_JUMP = 32;
 var NUM_MAX_ITEM = 10;
-var GAME_TIMER = 5.0;
+var GAME_TIMER = 1.0;
 var GRAVITY = 9.8;
 var aScore;
 var aTimer;
@@ -71,21 +72,6 @@ window.onload = function(){
   
   // 画像のロード
   // プログラムで使う画像は全てここで読み込む
-//  game.preload([IMG_GROUND,
-//    IMG_PLAYER,
-//    IMG_COIN_YELLOW,
-//    IMG_SCORE_NUM,
-//    IMG_TIMER_NUM,
-//    IMG_TIMER_NUM_MINI,
-//    IMG_TITLE,
-//    IMG_STARTBUTTON,
-//    IMG_KEY_INFO,
-//    IMG_INFORM,
-//    IMG_RESULT_TXT,
-//    IMG_RESULT_PT,
-//    IMG_RETURNTOTITLE,
-//    IMG_RANKING
-//    ]);
   game.preload(gameImages);
   
   
@@ -727,6 +713,11 @@ var Title = enchant.Class.create(enchant.Scene, {
           var that = this;
           var gamemode = 1;
 //          this.aGame = gamemain;
+          this.playerScore = gamemain.aScore.getScore();
+          var resultPic = game.assets[IMG_RESULT_TXT];
+          var returnToTitlePic = game.assets[IMG_RETURNTOTITLE];
+          var rankingPic = game.assets[IMG_RANKING];
+          
           var aEntity = new Entity();
           aEntity.backgroundColor = "#FFFFFF";
           aEntity.width = game.width;
@@ -734,22 +725,91 @@ var Title = enchant.Class.create(enchant.Scene, {
           this.addChild(aEntity);
           var aGroup = new Group();
           this.addChild(aGroup);
-          if (gamemode == 1) {
-            var restartEntity = new Entity();
-            restartEntity.x = (200 + Math.random() * 50);
-            restartEntity.y = 400;
-            restartEntity.width = 40;
-            restartEntity.height = 40;
-            restartEntity.touchEnabled = "enable";
-            restartEntity.backgroundColor = "#ffa500";
-            this.addChild(restartEntity);
-            restartEntity.addEventListener("touchstart", function(){
-//              game.removeScene(that.aGame);
-              game.popScene();
-              game.gameLaunch();
-            });
+          
+          var textGroup = new Group();
+          this.addChild(textGroup);
+          
+          var resultSprite = new Sprite(resultPic.width, resultPic.height);
+          resultSprite.image = resultPic;
+          resultSprite.x = (game.width - resultSprite.width) / 2;
+          resultSprite.y = 80;
+          textGroup.addChild(resultSprite);
+          
+          var rankSprite = new Sprite(rankingPic.width, rankingPic.height);
+          rankSprite.image = rankingPic;
+          rankSprite.x = 50;
+          rankSprite.y = game.height - 90;
+          textGroup.addChild(rankSprite);
+          
+          
+          var exitSprite = new Sprite(returnToTitlePic.width, returnToTitlePic.height);
+          exitSprite.image = returnToTitlePic;
+          exitSprite.x = game.width - exitSprite.width - 20;
+          exitSprite.y = game.height - 90;
+          exitSprite.touchEnabled = 'enable';
+          textGroup.addChild(exitSprite);
+          exitSprite.addEventListener("touchstart", function(){
+            game.popScene();
+            game.gameLaunch();
+//          arguments.callee で自分自身(呼び出している関数)への参照を取得することができる。
+//          参照 http://jsdo.it/phi/pQYE
+            this.removeEventListener("touchstart", arguments.callee);
+          });
+          
+          this.showScore(textGroup);
+          
+//          if (gamemode == 1) {
+//            var restartEntity = new Entity();
+//            restartEntity.x = (200 + Math.random() * 50);
+//            restartEntity.y = 400;
+//            restartEntity.width = 40;
+//            restartEntity.height = 40;
+//            restartEntity.touchEnabled = "enable";
+//            restartEntity.backgroundColor = "#ffa500";
+//            this.addChild(restartEntity);
+//            restartEntity.addEventListener("touchstart", function(){
+////              game.removeScene(that.aGame);
+//              game.popScene();
+//              game.gameLaunch();
+//            });
+//          }
+          
+        },
+        showScore: function(textGroup) {
+          var digitsGroup = new Group();
+          var digits = new Array();
+          var digitPic = game.assets[IMG_SCORE_NUM_BIG];
+          var pointPic = game.assets[IMG_RESULT_PT];
+          textGroup.addChild(digitsGroup);
+          
+          var pointSprite = new Sprite(pointPic.width, pointPic.height);
+          pointSprite.image = pointPic;
+          pointSprite.x = (game.width + digitPic.width) / 2 - pointPic.width;
+          pointSprite.y = (game.height - digitPic.height) / 2;
+          textGroup.addChild(pointSprite);
+          
+          // スコアは8桁
+          for (var i = 0; i < 8; i++) {
+            var aDigit = digits[i];
+            aDigit = new Sprite(digitPic.width / 10, digitPic.height);
+            aDigit.image = digitPic;
+            aDigit.x = (game.width + digitPic.width) / 2 - (i + 2) * (digitPic.width / 10);
+            aDigit.y = (game.height - digitPic.height) / 2;
+            aDigit.frame = 10;
+            digits.push(aDigit);
+            this.addChild(aDigit);
           }
           
+          var str = String(this.playerScore);
+          var ary = str.split("").reverse();
+          digits.forEach(function(aDigit, i){
+              if (ary[i] != null) {
+                aDigit.frame = ary[i];
+              }else{
+                // ここを0にすると0埋め、10にすると空白で埋められる。
+                aDigit.frame = 0;
+              }
+          });
         }
       });
       
