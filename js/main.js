@@ -18,7 +18,7 @@ gameImages.addImage = function(aFilePath){
   this[this.length] = aFilePath;
   return aFilePath;
 };
-var IMG_GROUND          = gameImages.addImage('res/ground_test.png');
+var IMG_GROUND          = gameImages.addImage('res/ground_r1.png');
 var IMG_PLAYER          = gameImages.addImage('res/chara1_4x.png');
 var IMG_COIN_YELLOW     = gameImages.addImage('res/coin_yellow.png');
 var IMG_SCORE_NUM       = gameImages.addImage('res/score_num_thin.png');
@@ -39,7 +39,7 @@ var FPS = 30;
 var GAME_SPEED = 1;
 var KEY_JUMP = 32;
 var NUM_MAX_ITEM = 10;
-var GAME_TIMER = 1.0;
+var GAME_TIMER = 20.0;
 var GRAVITY = 9.8;
 var aScore;
 var aTimer;
@@ -275,9 +275,10 @@ var Title = enchant.Class.create(enchant.Scene, {
           imgReady.tl.moveTo(imgReady.x, (game.height - imgReady.height) / 2 - 20 , game.fps * 0.2, enchant.Easing.LINEAR).moveBy(0, 20 , game.fps * 1.8, enchant.Easing.LINEAR).and().fadeOut(game.fps * 1.8, enchant.Easing.QUAD_EASEIN);
         };
         cue[game.fps] = function() {
-          this.aPlayer.enableOperation();
+
         };
         cue[game.fps * 2.0] = function() {
+          this.aPlayer.enableOperation();
           imgReady.frame = 1;
           imgReady.tl.show().delay(game.fps * 0.2).moveTo(imgReady.x, -imgReady.y, game.fps * 1.0, enchant.Easing.BACK_EASEINOUT);
           this.aTimer.startTimer();
@@ -415,18 +416,20 @@ var Title = enchant.Class.create(enchant.Scene, {
                 // こじつけくさい(オブジェクト指向っぽくない)からボツ予定
                 // これでいきます。
                 var delta = 10;
-                if (isKeyLeftPress) {
-                  this.x -= game.speed * delta;
-                  this.frame = this.count;
-                  this.direction = -1;
-                }else if (isKeyRightPress) {
-                  this.x += game.speed * delta;
-                  this.frame = this.count;
-                  this.direction = 1;
-                }else{
-                  this.frame = 0;
+                if (this.operationEnabled == true) {
+                  if (isKeyLeftPress) {
+                    this.x -= game.speed * delta;
+                    this.frame = this.count;
+                    this.direction = -1;
+                  }else if (isKeyRightPress) {
+                    this.x += game.speed * delta;
+                    this.frame = this.count;
+                    this.direction = 1;
+                  }else{
+                    this.frame = 0;
+                  }
+                  this.scaleX = this.direction;
                 }
-                this.scaleX = this.direction;
                 
                 this.jump();
                 
@@ -739,7 +742,7 @@ var Title = enchant.Class.create(enchant.Scene, {
           rankSprite.image = rankingPic;
           rankSprite.x = 50;
           rankSprite.y = game.height - 90;
-          textGroup.addChild(rankSprite);
+//          textGroup.addChild(rankSprite);
           
           
           var exitSprite = new Sprite(returnToTitlePic.width, returnToTitlePic.height);
