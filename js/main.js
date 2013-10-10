@@ -77,7 +77,7 @@ window.onload = function(){
   
   game.onload = function() {
     // スコア管理用
-    //var score = this.score = {};
+	//var score = this.score = {};
     this.score2 = new Ranking();
     this.gameLaunch();
   };
@@ -91,6 +91,13 @@ window.onload = function(){
       game.pushScene(new Game());
     });
   };
+  
+  // デバッグ用。コンソールで使用
+  game.setFps = function(fps) {
+    game.fps = fps;
+    game.speed = GAME_SPEED * (30 / game.fps);
+    return;
+  }
   
   game.start();
 };
@@ -513,7 +520,7 @@ var Title = enchant.Class.create(enchant.Scene, {
             this.image = aImage;
             // アイテムの出現位置をセット。x座標は画面内に収まるように、y座標は画面外にセット。
             this.x = Math.round(Math.random() * (game.width - this.width));
-            this.y = -1 * Math.round(Math.random() * 200);
+            this.y = -1 * Math.round(Math.random() * 200) - this.height;
             // フレーム毎の処理
             this.addEventListener("enterframe", function() {
               if (that.actionEnabled == true) {
