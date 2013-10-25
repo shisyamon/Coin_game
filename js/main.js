@@ -25,7 +25,7 @@ var IMG_SCORE_NUM       = gameImages.addImage('res/score_num_thin.png');
 var IMG_SCORE_NUM_BIG   = gameImages.addImage('res/score_num_big.png');
 var IMG_TIMER_NUM       = gameImages.addImage('res/timer_num.png');
 var IMG_TIMER_NUM_MINI  = gameImages.addImage('res/timer_num_mini.png');
-var IMG_TITLE           = gameImages.addImage('res/title.png');
+var IMG_TITLE           = gameImages.addImage('res/title_rev2.png');
 var IMG_STARTBUTTON     = gameImages.addImage('res/start.png');
 var IMG_KEY_INFO        = gameImages.addImage('res/info_key.png');
 var IMG_INFORM          = gameImages.addImage('res/period.png');
@@ -200,8 +200,8 @@ var Title = enchant.Class.create(enchant.Scene, {
         aGroup = new Group();
         this.addChild(aGroup);
         
-        var pause = new Pause();
-        this.addChild(pause);
+//        var pause = new Pause();
+//        this.addChild(pause);
         
         this.aScore = new Score();
 //        console.log(this.aScore.score);
@@ -561,6 +561,19 @@ var Title = enchant.Class.create(enchant.Scene, {
           disableAction: function() {
             this.actionEnabled = false;
           }
+      });
+      
+      var ItemManager = enchant.Class.create({
+        initialize: function(aGroup) {
+          this.group = aGroup;
+          
+          // 引数を配列に変換
+          // 使ってない。
+//          var args = Array.prototype.slice.call(arguments);
+//          args.forEach(function(x, i){
+//            console.log(i + ": " + x);
+//          });
+        }
       });
       
       // タイマー表示
