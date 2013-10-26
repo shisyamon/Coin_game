@@ -33,9 +33,10 @@ var IMG_RESULT_TXT      = gameImages.addImage('res/result_1.png');
 var IMG_RESULT_PT       = gameImages.addImage('res/pts.png');
 var IMG_RETURNTOTITLE   = gameImages.addImage('res/rett_txt.png');
 var IMG_RANKING         = gameImages.addImage('res/rank_txt.png');
+var IMG_PLEASE_CLICK    = gameImages.addImage('res/click_txt.png');
 
 var RANKING_LENGTH = 10;
-var FPS = 30;
+var FPS = 60;
 var GAME_SPEED = 1;
 var KEY_JUMP = 32;
 var NUM_MAX_ITEM = 10;
@@ -114,6 +115,7 @@ var Title = enchant.Class.create(enchant.Scene, {
       var titlePic = game.assets[IMG_TITLE];
       var startbuttonPic = game.assets[IMG_STARTBUTTON];
       var keyinfoPic = game.assets[IMG_KEY_INFO];
+      var clicktxtPic = game.assets[IMG_PLEASE_CLICK];
       
       var demoGroup = new Group();
       this.addChild(demoGroup);
@@ -132,6 +134,13 @@ var Title = enchant.Class.create(enchant.Scene, {
       startbuttonSprite.x = (game.width - startbuttonSprite.width) / 2;
       startbuttonSprite.y = 350;
       textGroup.addChild(startbuttonSprite);
+      
+      var clickSprite = new Sprite(clicktxtPic.width, clicktxtPic.height);
+      clickSprite.image = clicktxtPic;
+      clickSprite.x = (game.width - clickSprite.width) / 2;
+      clickSprite.y = 430;
+      textGroup.addChild(clickSprite);
+      clickSprite.tl.fadeOut(game.fps).fadeIn(game.fps).loop();
       
       var keyinfoSprite = new Sprite(keyinfoPic.width, keyinfoPic.height);
       keyinfoSprite.image = keyinfoPic;
